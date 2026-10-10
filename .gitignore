@@ -1,0 +1,29 @@
+# ---- Kit repo (root) ----
+# Unity projects carry their own .gitignore (see Test Enviroments/*/.gitignore).
+# Safety net: never commit a Unity Library folder, wherever a project lives.
+[Ll]ibrary/
+
+# Agent runtime state (editor lock, scratch)
+.agent/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# IDEs / OS
+.vs/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local Claude Code settings (shared settings.json stays tracked)
+.claude/settings.local.json
