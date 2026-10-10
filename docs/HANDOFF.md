@@ -4,17 +4,27 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **0 — Foundation (planning)**
-- Repo contains: docs only (plan, handoff, research, SpaceXAI blueprint). No skills or scripts yet.
-- Blocked on: answers to the open questions in the plan §6 (first track, harnesses, Unity setup).
+- Phase: **0 — Foundation (planning)**; Spike 001 done on branch `spike/001-unity-loop` (not merged).
+- Repo contains: docs, Unity test project, and the spike code `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green). No skills or scripts yet.
+- The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
+- Open (plan §6): the questions still unchecked.
 
 ## Next step
-1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). Remaining: register the server in Claude Code (stdio) and confirm with `claude mcp list` / `/mcp`; commit the project (check `git status` shows no Library/Temp/Logs/UserSettings/*.csproj).
-2. Spike (agent + Alexandros): prove the loop edit → refresh → wait for compile → read console → run an EditMode test, with no human relaying. Note every friction point.
-3. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
-4. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
+1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
+2. Review the spike branch; merge it or cherry-pick. Decide whether the spike code stays in the test project.
+3. Build `unity_wait_ready` + `unity_check` (spike proposals 1–2), then the CLAUDE.md rules (proposals 3–4). Investigate what rewrote `SpikeMathTests.cs` (friction #3) and pin unity-mcp to a release tag.
+4. Next spike: profiler/perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
+5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
+6. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
 
 ## Session log
+### 2026-10-10 (spike) — Spike 001, Unity loop
+- Ran all 7 steps on branch `spike/001-unity-loop`; results in `docs/spikes/001-unity-loop.md`.
+- Worked: compile detection (error with file+line+column), `.meta` generation, `run_tests` + `get_test_job(wait_timeout)`, pass and fail messages, `manage_profiler` reads.
+- Friction: `refresh_unity` returns before compile ends; an unexplained rewrite of a test file; profiler values from an idle Editor are zeros; `get_counters` without names returns 87 KB.
+- Not verified: reading a custom `ProfilerMarker`, GPU time, multi-frame stats.
+- Not done: nothing pushed or merged.
+
 ### 2026-10-10 (later) — D7 accepted, D8–D10
 - Unity kit first; v1 perf = Editor Profiler; Claude Code + CoplayDev over stdio.
 - Test project added (Unity 6000.3.10f1, URP 17.3); unity-mcp installed from `#main` (should be pinned).
