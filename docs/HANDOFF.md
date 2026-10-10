@@ -12,12 +12,18 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ## Next step
 1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
 2. Review the spike branch; merge it or cherry-pick. Decide whether the spike code stays in the test project.
-3. Build `unity_wait_ready` + `unity_check` (spike proposals 1–2), then the CLAUDE.md rules (proposals 3–4). Investigate what rewrote `SpikeMathTests.cs` (friction #3) and pin unity-mcp to a release tag.
+3. ~~Build `unity_wait_ready` + `unity_check`~~ done as skills in `skills/unity/` (not scripts, see below). Remaining: CLAUDE.md rules (proposals 3–4); decide how skills get discovered by Claude Code (`.claude/skills/` vs plugin, plan §6). Investigate what rewrote `SpikeMathTests.cs` (friction #3) and pin unity-mcp to a release tag.
 4. Next spike: profiler/perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
 6. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
 
 ## Session log
+### 2026-10-10 (spike follow-up) — gate skills + profiler rerun
+- Profiler rerun, Editor focused: Edit Mode still gives zeros; in Play Mode (profiler on) draw calls 24, triangles 1703, GPU 0.48 ms, CPU main ~1.1 ms. First sample after entering Play is warm-up. Details in the spike doc.
+- Decision: `unity_wait_ready` / `unity_check` are **skills over MCP calls**, not Python scripts. Reason: the stdio bridge closes other clients when a new one connects (StdioBridgeHost.cs:605-620), so a script would cut Claude Code's own link. HTTP transport would make scripts possible later.
+- Ran the skills as written: PASS 3/3, 0 errors, 0 warnings. Found `stale_status` blocking readiness while focused; cleared by one tool call; documented.
+- Not done: CLAUDE.md rules; skill discovery path; nothing pushed.
+
 ### 2026-10-10 (spike) — Spike 001, Unity loop
 - Ran all 7 steps on branch `spike/001-unity-loop`; results in `docs/spikes/001-unity-loop.md`.
 - Worked: compile detection (error with file+line+column), `.meta` generation, `run_tests` + `get_test_job(wait_timeout)`, pass and fail messages, `manage_profiler` reads.
