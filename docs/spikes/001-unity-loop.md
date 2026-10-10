@@ -37,13 +37,34 @@ Times are Unity-side, from `editor/state` timestamps and test-job timestamps (ag
 - The Render category lists many URP marker names (e.g. `AddActiveLocalLights`), each as a time in nanoseconds. This suggests a custom `ProfilerMarker` could be read by name, **but I did not verify it**: no custom marker exists yet and no frames were rendering.
 - Not tried: `profiler_start` recording to a `.raw` file, the Frame Debugger, memory snapshots, running the profiler during Play Mode. Not confirmed: GPU time per pass, p50/p95 over N frames (the tool reads one frame).
 
+### Step 7 rerun — Editor focused, profiler on, Play Mode (SampleScene)
+Sequence: `profiler_start` → `manage_editor play` → read → `manage_editor stop` → `profiler_stop`. Console stayed free of errors and warnings.
+
+| Reading | Edit Mode, focused, profiler off | Play Mode, profiler on |
+|---|---|---|
+| `Batches / Draw Calls / SetPass Count` | 0 / 0 / 0 | 24 / 24 / 24 |
+| `Triangles Count` | not read | 1703 |
+| `GC Allocated In Frame` (bytes / count) | not read | 24871 / 409 (first sample, right after entering Play) |
+| `cpu_frame_time_ms` | 0.32 | 0.24 (first sample), then 3.37 and 2.80 |
+| `cpu_main_thread_frame_time_ms` | 0.0002 | 1.10 and 1.21 |
+| `cpu_render_thread_frame_time_ms` | 0 | 1.04 and 1.05 |
+| `gpu_frame_time_ms` | 0 | 0 (first sample), then **0.481 and 0.476** |
+| URP marker `AddActiveLocalLights` | n/a | 300 ns (single frame, by name) |
+
+Conclusions:
+- Focus alone is not enough: **Edit Mode shows zeros even when focused**. Rendering has to be running (Play Mode).
+- The first sample right after entering Play Mode is warm-up and unusable. Samples taken a moment later gave consistent numbers (GPU 0.481 vs 0.476 ms, CPU main 1.10 vs 1.21 ms). `FrameTimingManager` GPU time works on this machine in Play Mode.
+- Markers are readable by name through `get_counters` (URP's `AddActiveLocalLights` returned a nanosecond value). A **custom** `ProfilerMarker` is still unverified.
+- Each read is one frame; two reads are only a rough check. A harness needs its own N-frame sampling inside the player loop, not tool calls.
+- Still not tried: `.raw` recording, Frame Debugger, memory snapshots.
+
 ## Friction log
 1. **`refresh_unity` does not wait.** `wait_for_ready=true` returned `resulting_state: "compiling"` immediately. Every compile needs a separate poll of `editor/state` (resource, not a tool). The compile was often already finished by the time of my first poll, so one poll was enough here, but nothing guarantees that.
 2. **A compile error leaves no domain reload**, so `last_domain_reload_after` does not change; "finished" must be read from `compilation.last_compile_finished_unix_ms` and `is_compiling`, not from reload timestamps. After the fix the old error was gone from the console with no explicit clear.
 3. **File changed under me.** After I introduced the failing assertion, the test file on disk read `Assert.AreEqual(6f,SpikeMath...` (space after the comma removed) instead of what I wrote, so my first `Edit` back failed with "String to replace not found". I do not know what rewrote it (Unity or MCP script tooling, an editor/formatter, or something else). I re-read and fixed it. Lesson: re-read before editing a file that Unity has compiled. This is unexplained and worth watching.
 4. **Console noise:** the first non-empty console read contained MCP-for-Unity's own lines (bridge started; "Suppressed duplicate command resent on a new connection"). Filtering by `types=["error"]` avoids it, but a "clean console" check must ignore those.
 5. **`get_counters` without names is huge** (87 KB), exceeds the tool-result limit and gets dumped to a file. Always pass counter names.
-6. **Profiler numbers from an idle, unfocused Editor are not meaningful** (GPU time 0, draw calls 0). A harness must force rendering (Play Mode or a scripted camera render).
+6. **Profiler numbers from the Edit Mode Editor are zeros, focused or not** (GPU time 0, draw calls 0). Rendering must be running: Play Mode works, and the first sample after entering it is warm-up. See the step 7 rerun.
 7. `refresh_unity` with `scope=scripts` reported `refresh_triggered: false` while still compiling; harmless, but the field is confusing.
 8. The Test Runner job reported success/fail in status only; the passed tests list was empty unless `include_details=true` (I used it once to see all 3 names).
 9. The Unity-side `git status` afterwards shows `Assets/Kit.meta` and `Assets/Kit/` as untracked: `.meta` files must be committed together with the assets (done in the commit).
