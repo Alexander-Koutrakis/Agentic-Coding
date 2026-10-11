@@ -2,6 +2,7 @@
 
 Branch: `task/002-cheap-gates` · Project: `Test Enviroments/Unity Agentic Kit test/` · Plan: §4.5
 Pipeline: implementer → `unity-check` → reviewer (fresh context, checks the diff against this card) → report to Alexandros.
+Status: **implemented 2026-10-11, gate PASS; awaiting review and merge.** Evidence in `docs/HANDOFF.md`.
 
 ## Goal
 Add three gates that read files on disk and run **before** the compile step of `unity-check`, cheapest first, stopping at the first FAIL:

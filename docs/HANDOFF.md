@@ -6,17 +6,31 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ## Current state
 - Phase: **1 — Verification (Unity)**. Branch `main` contains Spike 001, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate ladder proposed (plan §4.5); only compile + console + EditMode tests exist so far.
+- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope (Task 002, on branch `task/002-cheap-gates`), compile + console, EditMode tests. `unity-check` step 0 runs the three file gates (`scripts/unity/*.py`) before compiling.
+- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. ~~`unity-check` on `main`~~ PASS 3/3 (2026-10-11). Alexandros: merge branch `docs/handoff-2026-10-11` (docs only) into `main`.
-2. **Task 002 — cheap gates**: card ready at `docs/tasks/002-cheap-gates.md` (branch `task/002-cheap-gates`). .NET SDK 8.0.425 installed. Alexandros: review the card, then an agent implements it on the same branch.
+1. Alexandros: review and merge `task/002-cheap-gates` into `main` (it is stacked on `docs/handoff-2026-10-11`, so one merge brings both). Then run `unity-check` on `main` (scope: no card).
+2. Next gates (plan §4.5, "before done" tier): code-rules script (banned APIs, `UnityEditor` in runtime asmdefs) and the Roslyn analyzers gate. Needs a task card.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — Task 002 implemented (Claude Code)
+- Built `scripts/unity/` (`gate_common.py`, `changed_files.py`, `format_check.py`, `asset_check.py`, `scope_check.py`) + 42 pytest tests; `.editorconfig` in the test project; `unity-check` step 0.
+- Acceptance evidence:
+  1. `uv run --no-project --with pytest pytest scripts/unity/tests -q` → `42 passed in 22.06s` (format tests ran `dotnet format`, none skipped).
+  2. On the real project: `PASS format: 0 files` · `PASS assets: 29 assets, 29 .meta, 0 changed in git` · `PASS scope: 15 changed files in scope, tests may-not-change` (all exit 0).
+  3. Full `unity-check`: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, 0 errors, 0 warnings, ~11s` (wait-ready: compile 1.15 s, reload 3.1 s; job 5.4 s, tests 0.67 s).
+  4. Negative run: trailing whitespace in `SpikeMath.cs` → `FAIL format: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,36): error WHITESPACE: Fix whitespace formatting. Replace 12 characters with '\r\n\s\s\s\s\s\s\s\s'.` exit 1, no `refresh_unity` call. Restored from a backup (`cmp` identical), re-ran: PASS.
+  5. File gates: 1.3 s with no changed `.cs`, 2.25 s for the format gate alone with one changed file (budget 15 s).
+  6. The scope gate passes on this branch's own diff (above).
+  7. No changes under `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `ProjectSettings/`, `Packages/`; no `.meta` in the diff.
+- Findings: the bridge's console line is `<b><color=#cc3333>MCP-FOR-UNITY</color></b>: Client handler error: A task was canceled.` (as an **error**, right after a refresh): the prefix sits inside rich-text tags, so CLAUDE.md and `unity-check` now say so, and step 2 ignores these lines. `TutorialInfo/Scripts/Editor/ReadmeEditor.cs` (Unity template) has trailing whitespace on lines 13 and 26; only flagged if a task touches it. Git Bash `sed -i` turned CRLF into LF in the test file (restored from backup); prefer the Edit tool for `.cs` edits.
+- Deviation from the card: the format gate prints the file path repo-relative and drops dotnet's trailing `[workspace]` suffix; the rest of the line is dotnet's text unchanged.
+
 ### 2026-10-11 — Task 002 card (Claude Code)
 - Wrote `docs/tasks/002-cheap-gates.md` on `task/002-cheap-gates` (stacked on `docs/handoff-2026-10-11`). It defines the machine-readable `scope` block that the scope gate reads; the card uses one itself.
 - Found while scoping: no .NET SDK on the machine (`dotnet --info`: "No SDKs were found", runtimes 6.0.11/8.0.13 only). C# files are mixed CRLF/no-BOM (`Kit/Spike`) vs LF/BOM (`TutorialInfo`), and `core.autocrlf=true`, so the card leaves `end_of_line`/`charset` out of `.editorconfig` v1.

@@ -17,7 +17,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - IMPORTANT: never edit `.unity`, `.prefab`, `.asset`, `.mat` or `.meta` files as text. Change them through the Editor (UnityMCP) or stop and ask.
 - Plain text sources (`.cs`, `.asmdef`, `.shader`, `.hlsl`, `.uss`, `.uxml`) may be written with file tools. Never write a `.meta` by hand; Unity creates it on refresh. Commit every `.meta` together with its asset or folder.
 - Re-read a source file before editing it if a compile has happened since you last read it; something can rewrite it (Spike 001, friction #3).
-- Console: read errors with `types=["error"]` and warnings separately. Lines starting with `MCP-FOR-UNITY` are the bridge's own messages; ignore them.
+- Console: read errors with `types=["error"]` and warnings separately. Lines starting with `MCP-FOR-UNITY` (often wrapped in rich-text tags like `<b><color=…>`) are the bridge's own messages; ignore them.
 - Run tests through UnityMCP (`run_tests` → `get_test_job` with `wait_timeout`). Batch mode cannot open the project while the Editor has it open.
 - Never connect to the bridge port (6400) or script the bridge directly: a second client closes Claude Code's MCP link.
 - Never touch `Library/`, `Temp/`, `Logs/`, `UserSettings/`.

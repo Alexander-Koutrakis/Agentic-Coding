@@ -100,12 +100,12 @@ Known caveats: Editor numbers are noisy and unrepresentative → use for quick c
 
 | Tier | Gate | How | Status |
 |---|---|---|---|
-| Every iteration | **Format** | `.editorconfig` + `dotnet format --verify-no-changes` on changed files (uses Unity-generated `.sln`) | to build |
+| Every iteration | **Format** | `.editorconfig` + `dotnet format whitespace --folder --verify-no-changes` on changed files, workspace `Assets/` (no `.sln` needed) — `scripts/unity/format_check.py` | built (Task 002) |
 | | **Compile + console** | `unity-wait-ready` + console errors | built |
 | Before "done" | **Analyzers** | Roslyn analyzers (incl. Microsoft.Unity.Analyzers) as Unity RoslynAnalyzer DLLs; severities in `.editorconfig`; their warnings show in the console | to build |
 | | **Code rules** | script: no `UnityEditor` in runtime asmdefs without `#if UNITY_EDITOR`, banned APIs in hot paths (`GameObject.Find`, `FindObjectOfType`, LINQ/allocations in `Update`), no leftover `Debug.Log` | to build |
-| | **Asset integrity** | script: every file under `Assets/` has a `.meta`, no orphan `.meta`, no duplicate GUIDs; MCP: no missing scripts in changed scenes/prefabs | to build |
-| | **Scope** | script on `git diff`: only files the task card allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval | to build |
+| | **Asset integrity** | script: every file under `Assets/` has a `.meta`, no orphan `.meta`, no duplicate GUIDs, `.meta` staged with its asset (`scripts/unity/asset_check.py`); MCP: no missing scripts in changed scenes/prefabs | script built (Task 002); MCP part to build |
+| | **Scope** | script on `git diff`: only files the task card's `scope` block allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval (`scripts/unity/scope_check.py`) | built (Task 002) |
 | | **Tests** | EditMode (built) + PlayMode; new code has new tests | partly built |
 | Graphics feature | **Shader** | shader compile errors/warnings via console/MCP | to build |
 | | **Perf** | harness exists, runs in Play Mode, within budget, 0 GC alloc in hot path (D7 / §4.4) | next spike |
