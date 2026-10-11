@@ -4,20 +4,27 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
-- Repo contains: docs, CLAUDE.md, gate skills, Unity test project with the canary fixture `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green).
-- The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
-- Open (plan §6): the questions still unchecked.
+- Phase: **1 — Verification (Unity)**. Branch `main` contains Spike 001, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
+- The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
+- Gate ladder proposed (plan §4.5); only compile + console + EditMode tests exist so far.
+- Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
-2. ~~Merge spike branch~~ (D12) · ~~CLAUDE.md rules~~ (gate, console, re-read, profiler, bridge port).
-3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — check whether an IDE with format-on-save was open).
-4. Next spike: profiler/perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
-5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
-6. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
+1. Alexandros: make sure `main` is pushed (`git push`), then in Claude Code on `main` run `unity-check` → expect `PASS 3/3`.
+2. **Task 002 — cheap gates** (task card to write): `.editorconfig` + `dotnet format` check, asset-integrity script (`.meta` pairs, duplicate GUIDs), scope script on `git diff`; wire them into `unity-check` before the compile step.
+3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
+4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
+5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — merge (Cowork)
+- Alexandros merged `spike/001-unity-loop` into `main` (fast-forward). Recorded D14 (merge routine: agents never push/merge; human merges, then `unity-check` on `main`).
+
+### 2026-10-10 — gate ladder proposed (Cowork)
+- Proposed the Unity gate ladder and the implementer → gate → reviewer → report pipeline (plan §4.5). Alexandros wants a language-format gate (`.editorconfig` + `dotnet format`).
+- Format, asset-integrity and scope gates may be plain Python scripts (they only read files; D11 only forbids scripts that talk to the bridge).
+- Note: HANDOFF.md had reverted to the pre-review version on disk (CLAUDE.md and the plan had not); re-applied.
+
 ### 2026-10-10 — review of Spike 001 (Cowork)
 - Reviewed spike results and both gate skills: accepted. Decisions D11 (gates are skills over MCP), D12 (merge; Spike code stays as canary), D13 (CLAUDE.md references skills by path).
 - CLAUDE.md: added gate section and rules from proposals 3–5 and friction #11 (no direct bridge connection).

@@ -30,8 +30,9 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D8 | 2026-10-10 | **Unity kit first**, finished before starting the pure-code (C++/Vulkan) kit. | Focus. |
 | D9 | 2026-10-10 | Kit runs in **Claude Code**; Unity bridge = **CoplayDev/unity-mcp over stdio**. | Claude Code supports skills, hooks, subagents; stdio keeps it local. |
 | D11 | 2026-10-10 | Unity gates are **skills over UnityMCP calls** (`unity-wait-ready`, `unity-check`), not Python scripts. | The stdio bridge closes other clients when a new one connects, so a script would cut Claude Code's link. Revisit with HTTP transport if script gates become necessary. |
-| D12 | 2026-10-10 | Spike 001 merged into `main`. `Assets/Kit/Spike` stays in the test project as the **canary** fixture: the known-good reference for `unity-check` (3 EditMode tests). | The gate needs a fixture that must always pass. |
+| D12 | 2026-10-10 | Spike 001 merged into `main` (done 2026-10-11, fast-forward). `Assets/Kit/Spike` stays in the test project as the **canary** fixture: the known-good reference for `unity-check` (3 EditMode tests). | The gate needs a fixture that must always pass. |
 | D13 | 2026-10-10 | Until we package the kit (plugin vs `.claude/skills`, open question), `CLAUDE.md` points to skills by path, so they are followed every time instead of relying on auto-discovery. | Deterministic for now; packaging decided later. |
+| D14 | 2026-10-11 | **Merge routine:** agents finish on a task branch and never push or merge. Alexandros reviews and merges into `main` (GitHub PR preferred, local merge allowed), then `unity-check` must PASS on `main`. | One human gate on what lands in `main`. |
 | D10 | 2026-10-10 | Test project: `Test Enviroments/Unity Agentic Kit test` — Unity **6000.3.10f1**, **URP 17.3**, Test Framework 1.6.0. Root `.gitignore` always ignores `Library/`; each Unity project has its own anchored `.gitignore`. | Reproducible sandbox for the kit. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
@@ -93,7 +94,7 @@ Per feature, the agent must provide:
 
 Known caveats: Editor numbers are noisy and unrepresentative → use for quick checks only, compare relative (ON vs OFF, vs baseline on same machine); real numbers come from a development player build (later phase). Use medians of several runs and a tolerance (e.g. 5–10%).
 
-### 4.5 Unity gate ladder (proposed, 2026-10-10)
+### 4.5 Unity gate ladder (proposed 2026-10-10; next build: format, asset integrity, scope)
 `unity-check` becomes a list of gates, run cheapest first, stop at the first FAIL. Gates that only read files on disk (format, metas, scope, banned APIs) may be plain Python scripts: D11 only forbids scripts that talk to the bridge.
 
 | Tier | Gate | How | Status |
@@ -119,8 +120,8 @@ review pack (repo zip for a bigger model), approval list.
 ## 5. Phases
 | Phase | Outcome | Exit criterion |
 |---|---|---|
-| 0 Foundation | Repo layout, AGENTS.md, skill standard + linter, handoff protocol | A fresh agent can pick up work from HANDOFF.md alone |
-| 1 Verification | Unity: MCP bridge installed, editor lock, compile-wait + console parser, test-run via bridge. Native: build+test+validation gate | Each track has one command returning pass/fail with a short summary |
+| 0 Foundation ✅ (mostly) | Repo layout, AGENTS.md, skill standard + linter, handoff protocol | A fresh agent can pick up work from HANDOFF.md alone |
+| 1 Verification ⏳ (current) | Unity: MCP bridge installed, editor lock, compile-wait + console parser, test-run via bridge. Native: build+test+validation gate | Each track has one command returning pass/fail with a short summary |
 | 2 Skills | Common jobs: fix compile error, write+run test, profile a frame, shader change, asset-safe refactor | Each skill passes its own validation on a sample project |
 | 3 Coordination | Unity: planner → implementer → reviewer in sequence on one task. Native: parallel worker agents in worktrees | Unity: a task passes review without human relaying. Native: two tasks run in parallel and merge cleanly |
 | 4 Routines | Triggered runs (CI failure, bug report) with approval stops | Unattended run ends in a reviewed draft PR |
