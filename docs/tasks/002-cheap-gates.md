@@ -11,8 +11,8 @@ Add three gates that read files on disk and run **before** the compile step of `
 
 These are plain Python scripts. D11 only forbids scripts that talk to the bridge, and these never do.
 
-## Prerequisite (Alexandros)
-- **Install a .NET SDK (8.0, to match the installed 8.0.13 runtime).** `dotnet --info` reports `No SDKs were found`, so `dotnet format` cannot run. Until it is installed, the format gate must FAIL with `FAIL format: no .NET SDK (dotnet format unavailable)`, never skip. The asset and scope gates do not need it and can be built first.
+## Prerequisite
+- ~~Install a .NET SDK~~ Done 2026-10-11: .NET SDK **8.0.425** (winget `Microsoft.DotNet.SDK.8`), `dotnet format` 8.3.731007. If `dotnet` or its SDK is missing on another machine, the format gate must FAIL with `FAIL format: no .NET SDK (dotnet format unavailable)`, never skip.
 
 ## Scope
 The scope gate (part 3) reads this block. Paths are relative to the repo root; `*` matches within one folder and `**` across folders. A `.meta` is allowed when its asset is allowed.
@@ -42,7 +42,8 @@ tests: may-not-change
 ### 1. Format gate — `scripts/unity/format_check.py` + `.editorconfig`
 - Add `.editorconfig` at the test project root (`root = true`), with C# whitespace rules only: `indent_style = space`, `indent_size = 4`, `trim_trailing_whitespace = true`, `insert_final_newline = true`, plus the `csharp_new_line_*` / `csharp_space_*` rules that match the existing `Assets/Kit/Spike/**/*.cs` files.
 - **Do not set `end_of_line` or `charset` in v1.** The tracked files are mixed today: `Kit/Spike` files are CRLF without a BOM, while `TutorialInfo` files are LF with a UTF-8 BOM, and `core.autocrlf=true` plus `.gitattributes text=auto` already normalize line endings in git. Enforcing either one would flag files nobody touched.
-- Run `dotnet format whitespace "<project>" --folder --verify-no-changes --include <changed .cs files>`. `--folder` mode does not load the Unity-generated `.sln`/`.csproj`, so it needs no restore and no Unity DLLs. Style and analyzer rules, which do need the project loaded, belong to the later **Analyzers** gate.
+- Run `dotnet format whitespace "<project>/Assets" --folder --verify-no-changes --include <changed .cs files, relative to Assets/>`. `--folder` mode does not load the Unity-generated `.sln`/`.csproj`, so it needs no restore and no Unity DLLs. Style and analyzer rules, which do need the project loaded, belong to the later **Analyzers** gate.
+- **The workspace must be `Assets/`, not the project root.** Measured 2026-10-11 on the 2 Spike files: project root 9.1 s (it scans the 6,684 `.cs` files in `Library/PackageCache`), `Assets/` 1.3 s. Both exited 0. The tests must prove that the `.editorconfig` at the project root still applies when the workspace is `Assets/`.
 - Only changed `.cs` files under `<project>/Assets/` are checked. No changed `.cs` file means PASS: `PASS format: 0 files`.
 - On FAIL, report `file(line,col): <message>` lines exactly as `dotnet format` prints them.
 - Hint for friction #3 (a test file was rewritten under us, with a space after a comma removed): if the format gate flags something nobody wrote, note it in the handoff. Do not chase it in this task.

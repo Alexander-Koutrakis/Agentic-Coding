@@ -11,7 +11,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Next step
 1. ~~`unity-check` on `main`~~ PASS 3/3 (2026-10-11). Alexandros: merge branch `docs/handoff-2026-10-11` (docs only) into `main`.
-2. **Task 002 — cheap gates**: card ready at `docs/tasks/002-cheap-gates.md` (branch `task/002-cheap-gates`). Alexandros first: review the card, and install the .NET 8 SDK (none installed; the format gate needs it). The asset and scope gates can start without it.
+2. **Task 002 — cheap gates**: card ready at `docs/tasks/002-cheap-gates.md` (branch `task/002-cheap-gates`). .NET SDK 8.0.425 installed. Alexandros: review the card, then an agent implements it on the same branch.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
@@ -20,6 +20,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ### 2026-10-11 — Task 002 card (Claude Code)
 - Wrote `docs/tasks/002-cheap-gates.md` on `task/002-cheap-gates` (stacked on `docs/handoff-2026-10-11`). It defines the machine-readable `scope` block that the scope gate reads; the card uses one itself.
 - Found while scoping: no .NET SDK on the machine (`dotnet --info`: "No SDKs were found", runtimes 6.0.11/8.0.13 only). C# files are mixed CRLF/no-BOM (`Kit/Spike`) vs LF/BOM (`TutorialInfo`), and `core.autocrlf=true`, so the card leaves `end_of_line`/`charset` out of `.editorconfig` v1.
+- Installed .NET SDK 8.0.425 with winget (at the user's request). `dotnet format whitespace --folder --verify-no-changes` on the 2 Spike files: exit 0, 9.1 s with the project root as workspace vs 1.3 s with `Assets/` (the root includes `Library/PackageCache`, 6,684 `.cs` files). The card now requires `Assets/`.
 - Not done: the implementation itself.
 
 ### 2026-10-11 — unity-check on main (Claude Code)
