@@ -162,7 +162,7 @@ Architect and Director need not be separate agents (Director may be the Architec
 
 **Tiers (D16).** Small: coder + gate. Medium: short brief, plan, 1–2 reviewers, tasks, code reviewer once. Large: full pipeline, more reviewers. The Architect proposes the tier in the first exchange; the human confirms.
 
-**Formats.** `feature.md`, `implementation-plan.md` and task cards use fixed templates in `templates/`. A script (`scripts/core/format_check.py`, modeled on `scope_check.py`) checks structure at no token cost: required sections present, scope block parseable, every task has acceptance criteria, every task names its coder.
+**Formats.** `feature.md`, `implementation-plan.md` and task cards use fixed templates in `templates/`. A script (`scripts/core/docs_check.py`, built 2026-10-11, reuses `scope_check.parse_card`) checks structure at no token cost: required sections and table columns, allowed values, unfilled placeholders, task IDs and dependencies, styles listed match the tasks, hot-path tasks have a budget and harness, review verdicts and approval date, and each card matches its plan row. Templates are checked with `--allow-placeholders`. Old-format cards (002, 003) fail it by design.
 
 **Style guides.** One page each, written by the human's preferences, not generic advice. First: `csharp-architecture.md` (Vulkan-style: `CreateInfo` structs in, plain data structs passed around, no long parameter lists, explicit ownership). Second: `shader.md`. Where a style rule is mechanical it becomes a code-rules check (KIT005+), otherwise the reviewer checks it.
 
@@ -170,7 +170,7 @@ Architect and Director need not be separate agents (Director may be the Architec
 
 **Mistake log.** Reviewers append findings to `logs/friction-log.md`. A finding that appears twice becomes a template line, a code-rules check or a hook; otherwise the log is not doing its job.
 
-**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; the first three have `(confirm)` items for the human). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: `scripts/core/format_check.py`, the shader gate, KIT005. Not yet run end to end.
+**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; the first three have `(confirm)` items for the human). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: the shader gate, KIT005. Not yet run end to end.
 
 **Measure before adding.** Run one real medium feature through the minimal pipeline (templates, format script, one plan reviewer, coders, gate) and record tokens and time per stage. Add reviewers and roles only where plan review is seen catching real problems.
 
@@ -183,7 +183,7 @@ review pack (repo zip for a bigger model), approval list.
 |---|---|---|
 | 0 Foundation ✅ (mostly) | Repo layout, AGENTS.md, skill standard + linter, handoff protocol | A fresh agent can pick up work from HANDOFF.md alone |
 | 1 Verification ⏳ (current) | Unity: MCP bridge installed, editor lock, compile-wait + console parser, test-run via bridge. Native: build+test+validation gate | Each track has one command returning pass/fail with a short summary |
-| 1b Pipeline | Templates, format-check script, style guides (C#, shader), role files, one plan reviewer; one medium feature run end to end with token and time per stage recorded | A medium feature goes brief → approved plan → coded → reviewed with the human only at the two approvals |
+| 1b Pipeline | Templates, docs-check script, style guides (C#, shader), role files, one plan reviewer; one medium feature run end to end with token and time per stage recorded | A medium feature goes brief → approved plan → coded → reviewed with the human only at the two approvals |
 | 2 Skills | Common jobs: fix compile error, write+run test, profile a frame, shader change, asset-safe refactor | Each skill passes its own validation on a sample project |
 | 3 Coordination | Unity: planner → implementer → reviewer in sequence on one task. Native: parallel worker agents in worktrees | Unity: a task passes review without human relaying. Native: two tasks run in parallel and merge cleanly |
 | 4 Routines | Triggered runs (CI failure, bug report) with approval stops | Unattended run ends in a reviewed draft PR |

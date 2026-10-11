@@ -12,7 +12,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - **Pipeline redesign drafted** on `docs/pipeline-redesign` (not merged): plan §4.6 and D15-D20, role skills, style guides, templates, friction log. Nothing in it has been run yet. Gate ladder frozen (D20).
 
 ## Next step
-0. Pipeline (branch `docs/pipeline-redesign`): Alexandros reviews and merges. Then: answer the `(confirm)` items in the style guides; write `scripts/core/format_check.py`; run one medium feature through the pipeline (templates, one plan reviewer, coders, gate) and record tokens and time per stage. Trim this HANDOFF log (move old entries to `docs/archive/`) so sessions read less.
+0. Pipeline (branch `docs/pipeline-redesign`): Alexandros reviews and merges. Then: answer the `(confirm)` items in the style guides; run one medium feature through the pipeline (templates, one plan reviewer, coders, gate) and record tokens and time per stage. Trim this HANDOFF log (move old entries to `docs/archive/`) so sessions read less.
 1. ~~Merge `task/003-code-rules-analyzers` into `main`~~ done 2026-10-11 (fast-forward, `unity-check` on `main` PASS). Alexandros: push `main` when ready (agents never push). Things worth a look in the review: the deviations and decisions in the session log below (ruleset instead of `.editorconfig`, `||` not counted as editor-guarded, kit-allow on the line above must be comment-only, baseline/editor-only handling of moved files).
 2. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 3. Follow-ups noticed in Task 003: fail the gate on `UNT` performance warnings in **changed files only** (needs console parsing matched against `changed_files`; see how noisy they are first); the new-violations check counts per file and rule, so fixing one `Debug.Log` and adding another in the same file passes (accepted in the card); `unity-check` does not yet verify that the analyzer DLL still has its `RoslynAnalyzer` label (CS8032 only covers a DLL that fails to load).
@@ -20,11 +20,15 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — docs check (Claude Code)
+- Built `scripts/core/docs_check.py` on branch `task/pipeline-format-check` (named `docs_check`, not `format_check`: the Unity gate already has a `format_check.py` and two modules with that name shadowed each other in pytest). Checks brief, plan and task card against their templates: sections, table columns, allowed values, placeholders, task IDs and dependencies, styles listed vs tasks, hot-path budget and harness, review verdicts and approval date, card vs plan row. Reuses `scope_check.parse_card`. Output and exit codes as the Unity gates, log in `.agent/logs/docs.txt`.
+- Evidence: `45 passed in 0.47s` (`uv run --no-project --with pytest pytest scripts/core/tests -q`); `PASS docs: 3 files` on the three templates with `--allow-placeholders`; without the flag the brief template FAILs (placeholders); old-format cards (002, 003) FAIL on `Coder:` by design.
+- Director and Architect role files now call it; plan §4.6 updated. Not run: `unity-check` (no Unity files changed), the unity script tests (untouched).
 ### 2026-10-11 — pipeline redesign (Claude Code)
 - Alexandros worried about overengineering and token cost. We agreed: freeze the gate ladder (D20), add a front half to the pipeline (Architect → Director → plan review → human approval → coders → code reviewer), tier by size (D16), 2-3 reviewers with veto instead of a 5-agent vote (D17), rules in layers loaded per role (D18), Ponytail as an idea only (D19; it is a prompt that makes the coder write the minimum, its -45% token claim is its own benchmark).
 - Wrote on branch `docs/pipeline-redesign`: plan edits (principles 7-8, D15-D20, §4.6, phase 1b, open questions); `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`); `templates/` (feature, plan, task card with `Coder:` and `Profile:` header fields); `skills/roles/` (6 roles); `logs/friction-log.md`; CLAUDE.md pointer section.
 - Shader guide sources: Unity 6.3 manual (shader performance, SRP Batcher, keywords) and, for branching, forum threads and a Vulkan divergence guide (weaker). Three Unity doc URLs returned 404 and were not read in full.
-- Not done: `format_check.py`, shader gate, KIT005, an end-to-end run. `(confirm)` items in the style guides: 3-parameter limit, result enums vs exceptions, MonoBehaviour role.
+- Not done: shader gate, KIT005, an end-to-end run. `(confirm)` items in the style guides: 3-parameter limit, result enums vs exceptions, MonoBehaviour role.
 - No Unity work this session, so `unity-check` was not run (docs and markdown only).
 ### 2026-10-11 — rename merged into main (Claude Code)
 - At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/rename-test-environments` (`9f7dfd6..2721dd3`, local only, not pushed). Exception to D14 asked for by the human; D14 unchanged.

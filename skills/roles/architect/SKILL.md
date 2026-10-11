@@ -20,7 +20,8 @@ The human brings a feature idea. Not for bug fixes or small tweaks (tier small g
 4. Get the constraints: platform, render pipeline, performance budget if graphics or per-frame work.
 5. Write acceptance as observable results a person or test can check.
 6. Fill `templates/feature.md`. List open questions with who decides.
-7. Ask the human to approve. Set `Status: approved <date>` only after they say so.
+7. Run `uv run --no-project python scripts/core/docs_check.py docs/features/<name>/feature.md` and fix what it reports.
+8. Ask the human to approve. Set `Status: approved <date>` only after they say so.
 
 ## How to validate
 - Every template section is filled or says "none".
