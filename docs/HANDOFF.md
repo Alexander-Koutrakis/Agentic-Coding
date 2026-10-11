@@ -4,24 +4,28 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Branch `main` contains Spike 001, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
+- Phase: **1 — Verification (Unity)**. Branch `main` (`f3e9650`, local; 7 commits ahead of `origin/main`, not pushed) contains Spike 001, Task 002, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), the file gates `scripts/unity/`, CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope (Task 002, on branch `task/002-cheap-gates`), compile + console, EditMode tests. `unity-check` step 0 runs the three file gates (`scripts/unity/*.py`) before compiling.
-- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block. Branches: `task/002-cheap-gates` (done, reviewed, awaiting merge) → `task/003-code-rules-analyzers` (card only, stacked on 002).
+- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope (Task 002, merged), compile + console, EditMode tests. `unity-check` step 0 runs the three file gates (`scripts/unity/*.py`) before compiling.
+- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block. Branch `task/003-code-rules-analyzers` (card + handoff only) sits on `main`'s tip.
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. Alexandros: review and merge `task/002-cheap-gates` into `main` (it is stacked on `docs/handoff-2026-10-11`, so one merge brings both). Then run `unity-check` on `main` (expect `scope: no card`).
-   - Fast-forward or merge commit: `task/003-code-rules-analyzers` already sits on top of those commits; nothing to do.
-   - **Squash merge:** first move the card commit onto the new `main`: `git rebase --onto main task/002-cheap-gates task/003-code-rules-analyzers`.
+1. ~~Merge `task/002-cheap-gates` into `main`~~ done 2026-10-11 (fast-forward, `unity-check` on `main` PASS). Alexandros: push `main` when ready (agents never push).
 2. **Task 003 — code rules + Roslyn analyzers**, handed to a **fresh agent session** (decided 2026-10-11: tests that HANDOFF + card are enough, keeps the context clean, one task per review). Card: `docs/tasks/003-code-rules-analyzers.md` on branch `task/003-code-rules-analyzers`. Alexandros reviews the card first. Part A needs no approvals; Part B needs a yes for the NuGet download of Microsoft.Unity.Analyzers 1.28.0, so stay reachable. Start the session at the repo root with:
    > Switch to branch task/003-code-rules-analyzers. Read docs/HANDOFF.md and docs/IMPLEMENTATION_PLAN.md, then implement docs/tasks/003-code-rules-analyzers.md. Do Part A first. Ask me before the NuGet download in step B1.
-   - The implementing agent: check `git log main..HEAD` shows only the card commit (plus Task 002 if it is not merged yet), and that `uv run --no-project --with pytest pytest scripts/unity/tests -q` passes (61) before changing anything.
+   - The implementing agent: check `git log main..HEAD` shows only the Task 003 card and handoff commits, and that `uv run --no-project --with pytest pytest scripts/unity/tests -q` passes (61) before changing anything.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — Task 002 merged (Claude Code)
+- At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/002-cheap-gates` (`70a0071..f3e9650`, local only, not pushed). This is an exception to D14 (human merges), asked for by the human. D14 is unchanged.
+- `unity-check` on `main`: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, 0 errors, 0 warnings`. Script tests `61 passed in 29.70s`. Wait-ready: compile 0.05 s, reload 4.6 s.
+- Observed: the Editor reported `is_focused: true` this time, and the test job took 0.6 s instead of ~5.4 s in the earlier unfocused runs. Not investigated; worth knowing when timing gates later.
+- `task/003-code-rules-analyzers` already sits on `main`'s tip; no rebase needed.
+
 ### 2026-10-11 — Task 003 card (Claude Code)
 - Wrote `docs/tasks/003-code-rules-analyzers.md`: Part A = `code_rules.py` (KIT001 `UnityEditor` in runtime code, KIT002 scene searches/`SendMessage` in per-frame methods, KIT003 LINQ there, KIT004 `Debug.Log`; new violations only; `// kit-allow` with a reason); Part B = Microsoft.Unity.Analyzers in Unity's compile, severities in `.editorconfig`.
 - Research (Unity 6.3 manual, NuGet, the analyzers' `doc/index.md`):
