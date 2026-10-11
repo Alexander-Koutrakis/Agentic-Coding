@@ -4,7 +4,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. `main` (local, not pushed) has Spike 001, Tasks 002 and 003 and the gate skills. Task 003 added the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
+- Phase: **1 — Verification (Unity)**. `main` (local, not pushed) has Spike 001, Tasks 002 and 003 and the gate skills. Test project folder renamed to `Test Environments` (2026-10-11). Task 003 added the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules, analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling.
 - Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
@@ -18,6 +18,11 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — rename merged into main (Claude Code)
+- At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/rename-test-environments` (`9f7dfd6..2721dd3`, local only, not pushed). Exception to D14 asked for by the human; D14 unchanged.
+- `unity-check` on `main` (no card): `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings`. File gates `PASS format: 0 files` · `PASS assets: 32 assets, 32 .meta, 0 changed in git` · `PASS code-rules: 0 files, 0 new violations, 0 suppressed`; compile 4.4 s, reload 5.6 s, no CS8032, tests 0.67 s.
+- Project path is now `Test Environments/Unity Agentic Kit test`; Unity instance `Unity Agentic Kit test@f7afd68e`.
+
 ### 2026-10-11 — folder rename (Claude Code)
 - Renamed `Test Enviroments` to `Test Environments` (Editor closed by Alexandros first) on `task/rename-test-environments`: `git mv`, 20 references in 8 files updated, `Library/` moved along with the folder. No scripts referenced the old name.
 - Unity not yet reopened and `unity-check` not yet run on the new path: Alexandros reopens the project from `Test Environments/Unity Agentic Kit test`, then the agent runs `unity-check`. Expect a longer first import (Library cache keyed to the old path).
