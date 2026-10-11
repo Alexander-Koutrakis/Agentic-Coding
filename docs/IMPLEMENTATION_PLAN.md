@@ -170,7 +170,7 @@ Architect and Director need not be separate agents (Director may be the Architec
 
 **Mistake log.** Reviewers append findings to `logs/friction-log.md`. A finding that appears twice becomes a template line, a code-rules check or a hook; otherwise the log is not doing its job.
 
-**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; the first three have `(confirm)` items for the human). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: the shader gate, KIT005. Not yet run end to end.
+**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; v1, confirmed 2026-10-11: 3 parameters max, result enums for expected failures, MonoBehaviour as thin adapter, shaders for desktop with hand-written HLSL). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: the shader gate, KIT005. Not yet run end to end.
 
 **Measure before adding.** Run one real medium feature through the minimal pipeline (templates, format script, one plan reviewer, coders, gate) and record tokens and time per stage. Add reviewers and roles only where plan review is seen catching real problems.
 
@@ -201,7 +201,6 @@ review pack (repo zip for a bigger model), approval list.
 - [ ] Test project: brand-new small Unity project, or a copy of a real one?
 - [ ] Distribution of the kit into target projects: Claude Code plugin, git submodule, or copy script?
 - [ ] Sample projects for testing the kit (small Unity project, small Vulkan renderer).
-- [ ] Content of `style/csharp-architecture.md` (the human's Vulkan-style preferences) and `style/shader.md`.
 - [ ] Which medium feature is the first end-to-end pipeline run (ideally a small graphics feature, so the perf harness and shader gate are exercised).
 - [ ] Is the Ponytail ladder really cheaper on our tasks? Compare tokens with and without on one task before keeping it everywhere.
 - [ ] Shader gate: how to read shader compile errors and warnings through the bridge.

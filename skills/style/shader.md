@@ -1,6 +1,6 @@
 # Shader style (Unity URP, HLSL)
 
-DRAFT. Loaded by: shader coder, plan reviewers on shader tasks, code reviewer. Rules come from Unity's manual (6.3 shader performance, keywords, SRP Batcher) and general GPU practice. Measure before keeping any optimization. Tag: `(confirm)` = needs the human's call.
+v1, confirmed by Alexandros 2026-10-11. Target: desktop, hand-written HLSL (no Shader Graph, no mobile budget yet). Loaded by: shader coder, plan reviewers on shader tasks, code reviewer. Rules come from Unity's manual (6.3 shader performance, keywords, SRP Batcher) and general GPU practice. Measure before keeping any optimization.
 
 ## Structure
 - Write HLSL for URP. Use the URP includes and macros, not hand-written lighting. Start from Unlit, or Simple Lit if lighting is needed.
@@ -12,7 +12,7 @@ DRAFT. Loaded by: shader coder, plan reviewers on shader tasks, code reviewer. R
 - Move math from the fragment stage to the vertex stage and interpolate, if the result is linear enough.
 - Do per-frame or per-material math in C# and pass it as a property.
 - Avoid `sqrt`, `log`, `exp`, `sin`, `cos`, `pow` per pixel. Use `dot`, `cross`, a lookup texture, or a cheaper form. Use built-in helpers (`normalize`, `saturate`, `lerp`).
-- Use `half` for colors, directions and short vectors. `float` for world-space positions, UVs and anything with trig or `pow`. Desktop ignores `half`, so only mobile benefits.
+- Use `half` for colors, directions and short vectors. `float` for world-space positions, UVs and anything with trig or `pow`. Desktop ignores `half`, so it only matters if we add mobile later.
 
 ## Memory
 - Fewer texture reads: compute shapes and gradients, pack channels into one texture, enable mipmaps. No dependent reads in the hot path.

@@ -1,6 +1,6 @@
 # C# performance style (main thread, plain C#)
 
-DRAFT. Loaded only for tasks tagged `profile: hot-path`, plus the performance reviewer. Structure rules stay in `csharp-architecture.md`.
+v1. Loaded only for tasks tagged `profile: hot-path`, plus the performance reviewer. Structure rules stay in `csharp-architecture.md`.
 
 ## When it applies
 - Only code that runs per frame or over many items, and only with a budget in the card.

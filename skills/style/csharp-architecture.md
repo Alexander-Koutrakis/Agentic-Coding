@@ -1,6 +1,6 @@
 # C# architecture style (Vulkan-style)
 
-DRAFT. `(confirm)` marks guesses. Loaded by Director, C# coder, reviewers. Performance rules are in `csharp-performance.md`. Structure comes from here and the plan; the Ponytail ladder only decides how much code goes inside it.
+v1, confirmed by Alexandros 2026-10-11. Loaded by Director, C# coder, reviewers. Performance rules are in `csharp-performance.md`. Structure comes from here and the plan; the Ponytail ladder only decides how much code goes inside it.
 
 ## Create-info structs
 - Setup with 3 or more values takes one `<Thing>CreateInfo` struct: public fields, set explicitly, no logic.
@@ -18,7 +18,7 @@ public sealed class Water : System.IDisposable
 
 ## Data structs
 - State that travels together is one struct (`<Thing>Data`), not loose variables.
-- Methods take at most 3 parameters (confirm). More means a struct. Planned check: KIT005.
+- Methods take at most 3 parameters. More means a struct. Planned check: KIT005.
 - Structs over 16 bytes go by `in`. Inputs are `readonly struct` where possible.
 
 ## Data and behavior apart
@@ -29,7 +29,7 @@ public sealed class Water : System.IDisposable
 - One owner per resource, `Create`/`Dispose` in pairs, including `NativeArray`, `GraphicsBuffer`, `RenderTexture`. The plan names the owner.
 
 ## Failures
-- Bad input (null, bad `CreateInfo`): throw in `Create`. Expected runtime failures: return a result enum (confirm).
+- Bad input (null, bad `CreateInfo`): throw in `Create`. Expected runtime failures: return a result enum (like `VkResult`), never an exception.
 
 ## Layout
 - One folder and one `.asmdef` per feature, runtime and editor apart. Names: `<Thing>CreateInfo`, `<Thing>Data`, `<Thing>System`.
