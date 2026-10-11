@@ -4,20 +4,25 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. `main` has Spike 001, Task 002 and the gate skills. Branch `task/003-code-rules-analyzers` (3 commits ahead of `main` plus this handoff, not pushed, **awaiting Alexandros's review and merge**, D14) adds the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
+- Phase: **1 — Verification (Unity)**. `main` (local, not pushed) has Spike 001, Tasks 002 and 003 and the gate skills. Task 003 added the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules, analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling.
 - Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. **Alexandros: review and merge `task/003-code-rules-analyzers` into `main`** (D14), then run `unity-check` on `main`. Push `main` when ready (agents never push). Review points: the deviations and decisions in the session log below (ruleset instead of `.editorconfig`, `||` not counted as editor-guarded, kit-allow on the line above must be comment-only, baseline/editor-only handling of moved files).
+1. ~~Merge `task/003-code-rules-analyzers` into `main`~~ done 2026-10-11 (fast-forward, `unity-check` on `main` PASS). Alexandros: push `main` when ready (agents never push). Things worth a look in the review: the deviations and decisions in the session log below (ruleset instead of `.editorconfig`, `||` not counted as editor-guarded, kit-allow on the line above must be comment-only, baseline/editor-only handling of moved files).
 2. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 3. Follow-ups noticed in Task 003: fail the gate on `UNT` performance warnings in **changed files only** (needs console parsing matched against `changed_files`; see how noisy they are first); the new-violations check counts per file and rule, so fixing one `Debug.Log` and adding another in the same file passes (accepted in the card); `unity-check` does not yet verify that the analyzer DLL still has its `RoslynAnalyzer` label (CS8032 only covers a DLL that fails to load).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — Task 003 merged (Claude Code)
+- At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/003-code-rules-analyzers` (`548dc8f..16250e1`, local only, not pushed). Exception to D14 asked for by the human; D14 is unchanged.
+- `unity-check` on `main` (no card): `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings`. File gates `PASS format: 0 files` · `PASS assets: 32 assets, 32 .meta, 0 changed in git` · `PASS code-rules: 0 files, 0 new violations, 0 suppressed` (1.5 s together); script tests `167 passed in 71.01s`; no `CS8032`; tests 0.67 s, job 5.4 s. Compile after the branch switch took ~39 s this time (files changed on disk), reload 5 s.
+- This handoff update sits on `docs/handoff-task-003-merged` (one commit on top of `main`), because CLAUDE.md says to work on a branch.
+
 ### 2026-10-11 — Task 003 implemented (Claude Code)
 - **Part A** (`scripts/unity/code_rules.py`, `unity_assemblies.py`; `scope_check.TestFiles` moved into `Assemblies`, its 61 tests unchanged). KIT001-004 as in the card; PASS/FAIL output, log and exit codes like Task 002; `unity-check` step 0 has a 4th command. Tests: `scripts/unity/tests/test_code_rules.py`.
 - **Part B1 probe** (download approved in chat; `microsoft.unity.analyzers.1.28.0.nupkg`, 168,715 bytes = 164.76 KB, `dotnet nuget verify` exit 0: author signature Microsoft Corporation + NuGet.org repository signature; only `analyzers/dotnet/cs/Microsoft.Unity.Analyzers.dll` extracted, 316,216 bytes). Importer set through the Editor (`execute_code`): `RoslynAnalyzer` label, any platform off, Editor off; `.meta` shows both.
