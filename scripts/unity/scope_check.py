@@ -24,7 +24,7 @@ from gate_common import GateError, exit_with, finish, parser, resolve_project
 GATE = "scope"
 SCOPE_BLOCK = re.compile(r"^```scope[ \t]*\r?\n(.*?)^```", re.S | re.M)
 # An attribute right after "[" or "," (so "[Test, Category(..)]" counts twice, "void Test()" not at all).
-TEST_ATTR = re.compile(r"[\[,]\s*(?:NUnit\.Framework\.)?(?:Test|UnityTest|TestCase|TestCaseSource)(?:Attribute)?\s*(?=[\](,])")
+TEST_ATTR = re.compile(r"[\[,]\s*(?:(?:NUnit\.Framework|UnityEngine\.TestTools)\.)?(?:Test|UnityTest|TestCase|TestCaseSource)(?:Attribute)?\s*(?=[\](,])")
 ASSERT = re.compile(r"\bAssert\.")
 # Strings are matched (and kept) first so "//" inside a string is not taken for a comment.
 CODE_OR_COMMENT = re.compile(
@@ -129,7 +129,7 @@ class TestFiles:
     @staticmethod
     def _is_test_asmdef(text: str) -> bool:
         try:
-            data = json.loads(text.lstrip("﻿"))  # Unity and Visual Studio may write a BOM
+            data = json.loads(text.lstrip("\ufeff"))  # Unity and Visual Studio may write a BOM
         except ValueError:
             return False
         return "UNITY_INCLUDE_TESTS" in data.get("defineConstraints", []) or \

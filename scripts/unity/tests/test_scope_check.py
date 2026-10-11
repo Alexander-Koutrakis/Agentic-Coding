@@ -343,3 +343,8 @@ def test_folder_that_is_not_a_git_repo_is_an_environment_error(tmp_path):
                            ["--repo", str(tmp_path), "--project", "P", "--card", "c.md"])
 
     assert code == 2
+
+
+def test_fully_qualified_attributes_count():
+    code = "[UnityEngine.TestTools.UnityTest]\n[NUnit.Framework.Test]\n[NUnit.Framework.TestCase(1)]\n"
+    assert scope_check.count(code) == (3, 0)
