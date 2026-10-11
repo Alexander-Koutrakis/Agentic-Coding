@@ -24,7 +24,11 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    uv run --no-project python scripts/unity/asset_check.py --project "<project>"
    uv run --no-project python scripts/unity/scope_check.py --project "<project>" --card docs/tasks/<card>.md
    ```
-   Each prints one `PASS`/`FAIL <gate>: ...` line and up to 10 details. The full report is in `.agent/logs/<gate>.txt`. Exit 1 means FAIL. Exit 2 (`ERROR <gate>: ...`, a bad path or missing tool) also means FAIL. `--base` defaults to `main`.
+   No task card (for example a check on `main`): skip the scope command and write `scope: no card` in the result line.
+   Each prints one `PASS`/`FAIL <gate>: ...` line and up to 10 details. The full report is in `.agent/logs/<gate>.txt`. `--base` defaults to `main`.
+   - Exit 1: the gate's `FAIL <gate>: ...` line **is** the result line; paste it and its details.
+   - Exit 2 (`ERROR <gate>: ...`, a bad path, missing tool or unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
+   - All exit 0: carry the summaries into the final PASS line as `format <N> files, assets ok, scope ok`.
    - **format:** changed `.cs` files under `Assets/` vs the project's `.editorconfig`. Fix the file; never reformat files the task did not touch.
    - **assets:** `.meta` pairs, orphans, GUIDs on disk; `.meta` staged/committed together with its asset. Never write a `.meta` by hand: fix it through the Editor (refresh) or ask.
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.

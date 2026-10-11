@@ -30,6 +30,15 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
   7. No changes under `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `ProjectSettings/`, `Packages/`; no `.meta` in the diff.
 - Findings: the bridge's console line is `<b><color=#cc3333>MCP-FOR-UNITY</color></b>: Client handler error: A task was canceled.` (as an **error**, right after a refresh): the prefix sits inside rich-text tags, so CLAUDE.md and `unity-check` now say so, and step 2 ignores these lines. `TutorialInfo/Scripts/Editor/ReadmeEditor.cs` (Unity template) has trailing whitespace on lines 13 and 26; only flagged if a task touches it. Git Bash `sed -i` turned CRLF into LF in the test file (restored from backup); prefer the Edit tool for `.cs` edits.
 - Deviation from the card: the format gate prints the file path repo-relative and drops dotnet's trailing `[workspace]` suffix; the rest of the line is dotnet's text unchanged.
+- **Review (fresh-context subagent): CHANGES REQUESTED, 5 bugs, all fixed with regression tests:**
+  1. `--project "./X"`, an absolute path or a different letter case gave a **silent PASS** in all three gates, which also skipped the ProjectSettings/Packages protection. `resolve_project` now resolves against the file system; a path outside the repo is exit 2.
+  2. Commented-out `[Test]`/`Assert` still counted; comments are now stripped (strings kept) before counting.
+  3. An `.asmdef` with a UTF-8 BOM was not seen as a test assembly.
+  4. Dropping `UNITY_INCLUDE_TESTS` from an `.asmdef` in the same change unlocked its tests; test-ness is now checked on disk **and** at the merge-base.
+  5. A folder removed in git while its folder `.meta` stays staged passed.
+  - Nits fixed: details capped at 10 lines including the "... N more" line; `#` inside a glob is not a comment; `allow: x` on one line is rejected; a card that is not UTF-8 gives exit 2; `void Test()` no longer counts as an attribute; SKILL step 0 now states the no-card rule, what to return on `ERROR` (exit 2), and how the summaries map into the PASS line.
+  - Not changed (by design, noted): a card glob like `Assets/Kit/**/*.cs` does not allow a new folder's `.meta` (write `Assets/Kit/**` instead); with no .NET SDK the format tests show as skipped in pytest (the gate itself still FAILs).
+- After the fixes: `60 passed in 28.26s`; the reviewer's probe scripts now FAIL as they should; file gates `PASS format: 0 files` · `PASS assets: 29 assets, 29 .meta, 0 changed in git` · `PASS scope: 16 changed files in scope, tests may-not-change`; full gate `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, 0 errors, 0 warnings, ~11s` (compile 0.06 s, reload 4.5 s, job 5.3 s).
 
 ### 2026-10-11 — Task 002 card (Claude Code)
 - Wrote `docs/tasks/002-cheap-gates.md` on `task/002-cheap-gates` (stacked on `docs/handoff-2026-10-11`). It defines the machine-readable `scope` block that the scope gate reads; the card uses one itself.

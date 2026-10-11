@@ -133,3 +133,31 @@ def test_meta_staged_without_its_asset_fails(repo):
     code, out = gate(repo)
 
     assert (code, out.splitlines()[0]) == (1, f"FAIL assets: staged .meta without its asset: {rel}.meta")
+
+
+def test_folder_removed_but_its_meta_still_staged_fails(repo):
+    repo.asset("Old/B.cs", CLEAN_CS)
+    repo.commit("old folder")
+    repo.git("switch", "-q", "main")
+    repo.git("merge", "-q", "task")
+    repo.git("switch", "-q", "-c", "task2")
+    repo.git("rm", "-q", "-r", f"{repo.assets}/Old")
+    (repo.root / f"{repo.assets}/Old.meta").unlink()  # gone on disk, still in the index
+
+    code, out = gate(repo)
+
+    assert (code, out.splitlines()[0]) == (
+        1, f"FAIL assets: folder has no files left in git but its .meta is still staged: {repo.assets}/Old")
+
+
+def test_folder_removed_with_its_meta_passes(repo):
+    repo.asset("Old/B.cs", CLEAN_CS)
+    repo.commit("old folder")
+    repo.git("switch", "-q", "main")
+    repo.git("merge", "-q", "task")
+    repo.git("switch", "-q", "-c", "task2")
+    repo.git("rm", "-q", "-r", f"{repo.assets}/Old", f"{repo.assets}/Old.meta")
+
+    code, out = gate(repo)
+
+    assert code == 0, out

@@ -102,6 +102,12 @@ def check_git(repo: Path, project: str, base: str) -> tuple[list[str], int]:
                 problems.append(f".meta removed but asset still staged: {path}")
         elif not in_index(path) and f"{path}.meta" in index:
             problems.append(f"removed but its .meta is still staged: {path}")
+        # A folder left with no files in git keeps no folder in a clone, so its .meta must go too.
+        folder = path.rsplit("/", 1)[0]
+        while len(folder) > len(prefix) - 1:
+            if folder not in index_dirs and f"{folder}.meta" in index:
+                problems.append(f"folder has no files left in git but its .meta is still staged: {folder}")
+            folder = folder.rsplit("/", 1)[0]
     return list(dict.fromkeys(problems)), sum(p.startswith(prefix) for p in added | removed)
 
 

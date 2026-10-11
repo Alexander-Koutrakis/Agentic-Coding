@@ -25,10 +25,19 @@ def parser(description: str) -> argparse.ArgumentParser:
 
 
 def resolve_project(repo: Path, project: str) -> str:
-    """Return the project path as repo-relative posix, checking it has an Assets folder."""
-    rel = project.replace("\\", "/").strip("/")
-    if not (repo / rel / "Assets").is_dir():
-        raise GateError(f"no Assets folder in project '{rel}' (repo {repo})")
+    """Return the project path as repo-relative posix, checking it has an Assets folder.
+
+    Resolved against the real file system, so "./X", an absolute path or a different letter case on
+    Windows give the same prefix as git's paths. A prefix that does not match would make every gate
+    see zero changed files and PASS silently.
+    """
+    path = (repo / project).resolve()
+    try:
+        rel = path.relative_to(repo.resolve()).as_posix()
+    except ValueError:
+        raise GateError(f"project '{project}' is outside the repo {repo}") from None
+    if rel == "." or not (path / "Assets").is_dir():
+        raise GateError(f"no Assets folder in project '{project}' (repo {repo})")
     return rel
 
 
@@ -39,10 +48,11 @@ def finish(repo: Path, gate: str, ok: bool, summary: str, details: list[str]) ->
     log.parent.mkdir(parents=True, exist_ok=True)
     log.write_text("\n".join([line, *details]) + "\n", encoding="utf-8")
     print(line)
-    for d in details[:MAX_DETAILS]:
+    shown = details if len(details) <= MAX_DETAILS else details[:MAX_DETAILS - 1]
+    for d in shown:
         print(f"  {d}")
-    if len(details) > MAX_DETAILS:
-        print(f"  ... {len(details) - MAX_DETAILS} more in .agent/logs/{gate}.txt")
+    if len(shown) < len(details):
+        print(f"  ... {len(details) - len(shown)} more in .agent/logs/{gate}.txt")
     return 0 if ok else 1
 
 
