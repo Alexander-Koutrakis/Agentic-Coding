@@ -10,13 +10,18 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. Alexandros: make sure `main` is pushed (`git push`), then in Claude Code on `main` run `unity-check` → expect `PASS 3/3`.
+1. ~~`unity-check` on `main`~~ PASS 3/3 (2026-10-11). Alexandros: merge branch `docs/handoff-2026-10-11` (docs only) into `main`.
 2. **Task 002 — cheap gates** (task card to write): `.editorconfig` + `dotnet format` check, asset-integrity script (`.meta` pairs, duplicate GUIDs), scope script on `git diff`; wire them into `unity-check` before the compile step.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — unity-check on main (Claude Code)
+- Committed the pending Cowork doc edits (D14, gate-ladder status) on branch `docs/handoff-2026-10-11`; merged the duplicate gate-ladder log entry. Code is identical to `main` (`70a0071`).
+- Ran `unity-check` as written: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), 0 errors, 0 warnings`. Wait-ready: compile 0.27 s, reload 4.3 s, no `stale_status`. Tests 0.67 s, job 5.4 s.
+- Not done: Task 002 card not written yet.
+
 ### 2026-10-11 — merge (Cowork)
 - Alexandros merged `spike/001-unity-loop` into `main` (fast-forward). Recorded D14 (merge routine: agents never push/merge; human merges, then `unity-check` on `main`).
 
