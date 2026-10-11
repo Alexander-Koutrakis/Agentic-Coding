@@ -44,6 +44,7 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 ├── docs/
 │   ├── IMPLEMENTATION_PLAN.md   this file
 │   ├── HANDOFF.md               current state, next step (updated every session)
+│   ├── tasks/                   task cards (NNN-name.md: goal, scope block, steps, acceptance)
 │   ├── research/                dated research notes
 │   └── decisions/               longer write-ups when a decision needs one
 ├── skills/
