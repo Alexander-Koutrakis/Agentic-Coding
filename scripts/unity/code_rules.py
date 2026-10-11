@@ -26,6 +26,7 @@ from unity_assemblies import Assemblies
 
 GATE = "code-rules"
 EDITOR = "UNITY_EDITOR"
+EDITOR_ONLY_SYMBOLS = ("UNITY_EDITOR_WIN", "UNITY_EDITOR_OSX", "UNITY_EDITOR_LINUX", "UNITY_EDITOR_64")  # imply UNITY_EDITOR
 
 # A preprocessor line (kept apart: it is not code) or, as in scope_check, a string, char or comment.
 SOURCE = re.compile(rf"(?P<directive>^[ \t]*#[^\n]*)|{CODE_OR_COMMENT.pattern}", re.S | re.M)
@@ -34,10 +35,10 @@ KIT_ALLOW = re.compile(r"^//\s*kit-allow\s+(?P<ids>KIT\d{3}(?:\s*,\s*KIT\d{3})*)
 UNITY_EDITOR_REF = re.compile(r"(?<![\w.])UnityEditor\b")
 DEBUG_LOG = re.compile(r"(?<!\w)Debug\s*\.\s*Log(?:Format)?\s*\(")
 PER_FRAME = re.compile(r"\bvoid\s+(?P<name>Update|LateUpdate|FixedUpdate|OnGUI)\s*\(")
-USING_LINQ = re.compile(r"\busing\s+System\s*\.\s*Linq\s*;")
+USING_LINQ = re.compile(r"\busing\s+(?:static\s+)?System\s*\.\s*Linq(?:\s*\.\s*Enumerable)?\s*;")
 KIT002_CALL = re.compile(
     r"\bGameObject\s*\.\s*Find\w*\s*\("
-    r"|\bFind(?:ObjectsOfType|ObjectOfType|FirstObjectByType|AnyObjectByType|ObjectsByType)\s*(?:<[^<>;(]*>\s*)?\("
+    r"|\bFind(?:ObjectsOfType|ObjectOfType|FirstObjectByType|AnyObjectByType|ObjectsByType)\s*(?:<[^;()]*>\s*)?\("
     r"|\b(?:SendMessage|SendMessageUpwards|BroadcastMessage)\s*\(")
 KIT003_CALL = re.compile(
     r"\.\s*(?:Where|Select|Any|All|First|FirstOrDefault|Last|OrderBy|ToList|ToArray|Count|Sum)\s*\(")
@@ -168,10 +169,11 @@ def evaluate(node, env: dict[str, bool]) -> bool:
 
 def implies_editor(node) -> bool:
     """True if the branch can only run when UNITY_EDITOR is defined."""
-    others = sorted(symbols(node, set()) - {EDITOR})
+    off = {EDITOR, *EDITOR_ONLY_SYMBOLS}  # all false when the Editor is not the compiler
+    others = sorted(symbols(node, set()) - off)
     if len(others) > 12:
         return False
-    return not any(evaluate(node, {EDITOR: False, **dict(zip(others, values))})
+    return not any(evaluate(node, {**dict.fromkeys(off, False), **dict(zip(others, values))})
                    for values in product([False, True], repeat=len(others)))
 
 
@@ -302,10 +304,20 @@ def counts(hits: list[Hit]) -> Counter[str]:
 
 def check_file(repo: Path, mb: str, asm: Assemblies, c: Change) -> tuple[list[str], int]:
     """(problems, suppressed hits) for one changed file."""
-    editor_only = asm.is_editor_only(c.path)
-    now = find_hits((repo / c.path).read_text(encoding="utf-8", errors="replace"), editor_only)
-    before_text = None if c.status == "A" else read_at(repo, mb, c.old_path or c.path)
-    before = counts(find_hits(before_text, editor_only)) if before_text is not None else Counter()
+    old_path = c.old_path or c.path
+    before_text = None if c.status == "A" else read_at(repo, mb, old_path)
+    # Editor-only is judged separately for each side. The old text by where it lived at the merge-base, so
+    # moving editor code into runtime shows its violations as new. The new text by the .asmdef on disk, and
+    # for a file that already existed also by its place at the merge-base, so flipping an .asmdef or moving
+    # a file in the same diff does not hide anything. A brand-new file trusts the disk (a new editor assembly
+    # adds its .asmdef and files together).
+    editor_now = asm.is_editor_only(c.path)
+    editor_before = False
+    if before_text is not None:
+        editor_before = asm.is_editor_only(old_path, "base")
+        editor_now = editor_now and editor_before
+    now = find_hits((repo / c.path).read_text(encoding="utf-8", errors="replace"), editor_now)
+    before = counts(find_hits(before_text, editor_before)) if before_text is not None else Counter()
     now_counts = counts(now)
     problems = []
     for rule in sorted(now_counts):
@@ -325,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
 
     files = [c for c in changed_files(repo, args.base)
              if c.status != "D" and c.path.endswith(".cs") and c.path.startswith(f"{project}/Assets/")
-             and not asm.is_test(c.path) and not (c.old_path and asm.is_test(c.old_path))]
+             and not asm.is_test(c.path)]
     problems: list[str] = []
     suppressed = 0
     for c in files:

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -407,3 +408,70 @@ def test_implies_editor(cond, expected):
 @pytest.mark.parametrize("cond", ["UNITY_EDITOR &&", "(UNITY_EDITOR", "A == B", "", "&& A"])
 def test_unparseable_conditions_return_none(cond):
     assert code_rules.parse_condition(cond) is None
+
+
+# --- review fixes ---------------------------------------------------------------------------------------------
+
+def commit_on_main(repo: Repo, rel: str, text: str) -> None:
+    repo.git("switch", "-q", "main")
+    repo.asset(rel, text)
+    repo.commit("base file")
+    repo.git("switch", "-q", "task")
+    repo.git("rebase", "-q", "main")
+
+
+def move(repo: Repo, old: str, new: str, text: str) -> None:
+    (repo.root / repo.assets / Path(new).parent).mkdir(parents=True, exist_ok=True)
+    repo.git("mv", f"{repo.assets}/{old}", f"{repo.assets}/{new}")
+    repo.git("mv", f"{repo.assets}/{old}.meta", f"{repo.assets}/{new}.meta")
+    (repo.root / repo.assets / new).write_text(text, encoding="utf-8", newline="")
+
+
+def test_moving_editor_code_into_runtime_shows_its_violations_as_new(repo):
+    text = "using UnityEditor;\n\npublic class E { }\n"
+    commit_on_main(repo, "Kit/Editor/E.cs", text)
+    repo.asset("Kit/Runtime/.keep", "x")  # a folder for the new place
+    move(repo, "Kit/Editor/E.cs", "Kit/Runtime/E.cs", text)
+    fails(run_gate(code_rules, repo), "Kit/Runtime/E.cs(1,7): KIT001")
+
+
+def test_moving_runtime_code_into_an_editor_folder_passes(repo):
+    text = f"using UnityEngine;\npublic class R : MonoBehaviour {{ void Start() {{ {LOG} }} }}\n"
+    commit_on_main(repo, "Kit/Runtime/R.cs", text)
+    repo.asset("Kit/Editor/.keep", "x")
+    move(repo, "Kit/Runtime/R.cs", "Kit/Editor/R.cs", text)
+    ok(run_gate(code_rules, repo))
+
+
+def test_flipping_an_asmdef_to_editor_only_does_not_hide_new_violations(repo):
+    write_asmdef(repo, "Kit/Tool/Kit.Tool.asmdef", includePlatforms=[])
+    commit_on_main(repo, "Kit/Tool/Tool.cs", "using UnityEditor;\n\npublic class Tool { }\n")
+    write_asmdef(repo, "Kit/Tool/Kit.Tool.asmdef", includePlatforms=["Editor"])
+    tool = repo.root / repo.assets / "Kit/Tool/Tool.cs"
+    tool.write_text("using UnityEditor;\n\npublic class Tool { }\n// touched\n", encoding="utf-8", newline="")
+    ok(run_gate(code_rules, repo))  # not worse than before: the .asmdef change is the scope gate's business
+    tool.write_text("using UnityEditor;\nusing UnityEditor.Callbacks;\n\npublic class Tool { }\n", encoding="utf-8", newline="")
+    fails(run_gate(code_rules, repo), "Tool.cs(2,7): KIT001")
+
+
+def test_file_moved_out_of_a_tests_folder_is_checked_as_runtime(repo):
+    text = runtime(f"    void Start() {{ {LOG} }}")
+    commit_on_main(repo, "Kit/Tests/T.cs", text)
+    repo.asset("Kit/Runtime/.keep", "x")
+    move(repo, "Kit/Tests/T.cs", "Kit/Runtime/T.cs", text)
+    code, out = run_gate(code_rules, repo)
+    assert code == 0 and "1 files" in out, out  # checked now, and not new: it already had the violation
+
+
+@pytest.mark.parametrize("symbol", ["UNITY_EDITOR_WIN", "UNITY_EDITOR_OSX", "UNITY_EDITOR_LINUX"])
+def test_platform_editor_symbols_count_as_editor_only(repo, symbol):
+    ok(gate(repo, "Kit/Foo.cs", f"#if {symbol}\nusing UnityEditor;\n#endif\n\npublic class Foo {{ }}\n"))
+
+
+def test_nested_generic_scene_search_in_update_fails(repo):
+    fails(gate(repo, "Kit/Foo.cs", update("var a = FindObjectsByType<List<Foo>>(FindObjectsSortMode.None);")), "KIT002")
+
+
+def test_using_static_linq_enumerable_enables_kit003(repo):
+    fails(gate(repo, "Kit/Foo.cs", update("var r = items.Where(x => x);", "using UnityEngine;\nusing static System.Linq.Enumerable;")),
+          "KIT003")

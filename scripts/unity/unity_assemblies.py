@@ -70,14 +70,15 @@ class Assemblies:
             return True
         return self._in_test_assembly(path, "disk") or self._in_test_assembly(path, "base")
 
-    def is_editor_only(self, path: str) -> bool:
-        """Editor-only code: the owning .asmdef has includePlatforms == ["Editor"] on disk.
+    def is_editor_only(self, path: str, view: str = "disk") -> bool:
+        """Editor-only code: the owning .asmdef has includePlatforms == ["Editor"] in this view.
 
         With no .asmdef, a folder called Editor below Assets (Unity's Assembly-CSharp-Editor).
+        view "base" asks the same question of the merge-base tree, for the file's old path.
         """
         if not self._under_assets(path):
             return False
-        found = self._nearest(path, "disk")
+        found = self._nearest(path, view)
         if found is not None:
             return any(d.get("includePlatforms") == ["Editor"] for d in found)
         return "Editor" in path[len(self.assets) + 1:].split("/")[:-1]

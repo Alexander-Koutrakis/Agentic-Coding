@@ -4,22 +4,54 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Branch `main` (`f3e9650`, local; 7 commits ahead of `origin/main`, not pushed) contains Spike 001, Task 002, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), the file gates `scripts/unity/`, CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
+- Phase: **1 — Verification (Unity)**. `main` has Spike 001, Task 002 and the gate skills. Branch `task/003-code-rules-analyzers` (3 commits ahead of `main` plus this handoff, not pushed, **awaiting Alexandros's review and merge**, D14) adds the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope (Task 002, merged), compile + console, EditMode tests. `unity-check` step 0 runs the three file gates (`scripts/unity/*.py`) before compiling.
-- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block. Branch `task/003-code-rules-analyzers` (card + handoff only) sits on `main`'s tip.
+- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules, analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling.
+- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. ~~Merge `task/002-cheap-gates` into `main`~~ done 2026-10-11 (fast-forward, `unity-check` on `main` PASS). Alexandros: push `main` when ready (agents never push).
-2. **Task 003 — code rules + Roslyn analyzers**, handed to a **fresh agent session** (decided 2026-10-11: tests that HANDOFF + card are enough, keeps the context clean, one task per review). Card: `docs/tasks/003-code-rules-analyzers.md` on branch `task/003-code-rules-analyzers`. Alexandros reviews the card first. Part A needs no approvals; Part B needs a yes for the NuGet download of Microsoft.Unity.Analyzers 1.28.0, so stay reachable. Start the session at the repo root with:
-   > Switch to branch task/003-code-rules-analyzers. Read docs/HANDOFF.md and docs/IMPLEMENTATION_PLAN.md, then implement docs/tasks/003-code-rules-analyzers.md. Do Part A first. Ask me before the NuGet download in step B1.
-   - The implementing agent: check `git log main..HEAD` shows only the Task 003 card and handoff commits, and that `uv run --no-project --with pytest pytest scripts/unity/tests -q` passes (61) before changing anything.
-3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
+1. **Alexandros: review and merge `task/003-code-rules-analyzers` into `main`** (D14), then run `unity-check` on `main`. Push `main` when ready (agents never push). Review points: the deviations and decisions in the session log below (ruleset instead of `.editorconfig`, `||` not counted as editor-guarded, kit-allow on the line above must be comment-only, baseline/editor-only handling of moved files).
+2. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
+3. Follow-ups noticed in Task 003: fail the gate on `UNT` performance warnings in **changed files only** (needs console parsing matched against `changed_files`; see how noisy they are first); the new-violations check counts per file and rule, so fixing one `Debug.Log` and adding another in the same file passes (accepted in the card); `unity-check` does not yet verify that the analyzer DLL still has its `RoslynAnalyzer` label (CS8032 only covers a DLL that fails to load).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — Task 003 implemented (Claude Code)
+- **Part A** (`scripts/unity/code_rules.py`, `unity_assemblies.py`; `scope_check.TestFiles` moved into `Assemblies`, its 61 tests unchanged). KIT001-004 as in the card; PASS/FAIL output, log and exit codes like Task 002; `unity-check` step 0 has a 4th command. Tests: `scripts/unity/tests/test_code_rules.py`.
+- **Part B1 probe** (download approved in chat; `microsoft.unity.analyzers.1.28.0.nupkg`, 168,715 bytes = 164.76 KB, `dotnet nuget verify` exit 0: author signature Microsoft Corporation + NuGet.org repository signature; only `analyzers/dotnet/cs/Microsoft.Unity.Analyzers.dll` extracted, 316,216 bytes). Importer set through the Editor (`execute_code`): `RoslynAnalyzer` label, any platform off, Editor off; `.meta` shows both.
+  - **DLL copied before the importer settings were set** produced compile errors (`CS0433: The type 'Vector2' exists in both 'Microsoft.Unity.Analyzers' and 'UnityEngine.CoreModule'`, seen in Editor.log) for that one compile; gone once the platforms were off. Set the importer first next time (or copy the DLL together with a pre-made importer state).
+  - Probes (temporary, deleted through the Editor): `XProbe` in `Assets/Kit/Spike/Runtime/` (assembly `Kit.Spike`), `XProbe2` in `Assets/Kit/` (`Assembly-CSharp`), each with an empty `Update` and `new X()` on a `MonoBehaviour`.
+    - **With `dotnet_diagnostic.UNT0010.severity = error` in `.editorconfig`:** compile ran, console had no UNT line for either probe (`CS0168` for a deliberate unused variable did show, so warnings reach the console). So **Unity's compile does not apply `.editorconfig` severities**.
+    - **With `Assets/Default.ruleset` (`<Rule Id="UNT0010" Action="Error" />`), `.editorconfig` line removed:** `Assets\Kit\Spike\Runtime\XProbe.cs(11,17): error UNT0010: Component 'XProbe' should not be instantiated directly.`; after deleting `XProbe`: `Assets\Kit\XProbe2.cs(12,17): error UNT0010: Component 'XProbe2' should not be instantiated directly.` (plus `CS0168`). Both assemblies are covered, so the analyzer in a folder with no asmdef applies to custom asmdefs too (the Unity manual's "predefined assemblies only" reading is not what happens in 6000.3.10f1).
+    - `UNT0001` (empty `Update`) did not show at its default severity; with `Action="Warning"` it shows: `AnalyzerProbe.cs(7,14): warning UNT0001: The Unity message 'Update' is empty.`
+    - No `CS8032` / "analyzer could not be loaded" at any point after the importer was set.
+  - **Decisions:** DLL stays in `Assets/Kit/Analyzers/` (both probes fired). Severity source = `Assets/Default.ruleset` (the card's fallback); `.editorconfig` is unchanged. IDs checked against `doc/index.md` at tag 1.28.0 (the lists in the card match; 23 errors, 18 warnings).
+- **Acceptance evidence:**
+  1. `uv run --no-project --with pytest pytest scripts/unity/tests -q` → `167 passed in 65.88s` (61 Task 002 tests unchanged + 106 new).
+  2. `PASS code-rules: 0 files, 0 new violations, 0 suppressed` (exit 0).
+  3. Probe evidence above.
+  4. Full gate on this branch with this card: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, ~14s` — file gates `PASS format: 0 files` · `PASS assets: 32 assets, 32 .meta, 5 changed in git` · `PASS scope: 13 changed files in scope, tests may-not-change` · `PASS code-rules: 0 files, 0 new violations, 0 suppressed`; wait-ready: compile 0.05 s, reload 4.1 s; tests 0.67 s, job 5.3 s; no `CS8032`, console errors and warnings empty after the run.
+  5. Negative runs:
+     - (a) `Debug.Log("x");` added to `SpikeMath.Lerp01` (Edit tool): `FAIL code-rules: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(7,13): KIT004 Debug.Log left in runtime code` (exit 1, before any compile). Reverted with the Edit tool (`git diff` of the file empty), re-run: `PASS code-rules: 0 files, 0 new violations, 0 suppressed`.
+     - (b) `Assets/Kit/Spike/Runtime/AnalyzerProbe.cs`: console after compile: `AnalyzerProbe.cs(13,25): error UNT0010: Component 'AnalyzerProbe' should not be instantiated directly.` → `FAIL compile: ... error UNT0010 ...`. The file gates stop earlier on a probe (`FAIL assets: missing .meta`, then `FAIL scope: outside card scope`), as designed, so the compile run was done with the probe present and the compile steps only. Deleted through the Editor (`delete_script`), console clean afterwards, final gate PASS (4).
+  6. File gates (4 scripts) together: 1.9 s (budget 15 s).
+  7. No changes under `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `ProjectSettings/`, `Packages/`. New `.meta` files, all created by Unity: `Assets/Kit/Analyzers.meta`, the DLL's, and `Assets/Default.ruleset.meta` (the card expected only the first two; the third comes with the ruleset fallback, which the scope block allows). The DLL's `.meta` shows `labels: - RoslynAnalyzer` and Any/Editor `enabled: 0`.
+- **Deviations from the card (all conservative):**
+  - Severities in `Assets/Default.ruleset`, not `.editorconfig` (probe evidence above).
+  - KIT001 evaluates `#if` conditions as boolean expressions: a branch is editor-guarded only if it can run **only** when `UNITY_EDITOR` is defined. So `#if UNITY_EDITOR || DEVELOPMENT_BUILD` is not guarded, `#else` of `#if !UNITY_EDITOR` is, and `UNITY_EDITOR_WIN/OSX/LINUX/64` count as editor. Conditions that do not parse fall back to the card's literal rule.
+  - `// kit-allow` on the line above only counts if that line holds nothing but the comment.
+  - `UNT0010`-style errors come from the Editor's own console; the CS8032 check lives in `unity-check` step 2 (needs a console read after `unity-wait-ready` and before any clear).
+- **Review (fresh-context subagent): APPROVE with minor findings**, ~70 probes, all verified fixes added with regression tests:
+  1. Moving editor code into runtime passed (baseline counted with the new path's editor flag) → baseline now uses the old path's editor-only status at the merge-base; the new side requires editor-only also at the merge-base for files that already existed (a brand-new file trusts its `.asmdef` on disk, so a new editor assembly with its files passes).
+  2. A file renamed out of `Tests/` was skipped via its old path → only the new path decides test-ness.
+  3. `UNITY_EDITOR_WIN/OSX/LINUX` were reported as runtime → recognised.
+  4. Nested generics (`FindObjectsByType<List<Foo>>`) and `using static System.Linq.Enumerable;` were missed → handled. Not fixed: a method group (`Action<object> a = Debug.Log;`).
+  5. Known, per the card: count comparison is blind to swaps (fix one hit, add another of the same rule in the file).
+  6. SKILL wording: the CS8032 read must come right after `unity-wait-ready` and before any console clear (done; `read_console` does accept `filter_text`, used above).
+  - A new asmdef flipped to Editor-only in the same diff still trusts new files; the flip itself is for the scope gate and the human.
+
 ### 2026-10-11 — Task 002 merged (Claude Code)
 - At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/002-cheap-gates` (`70a0071..f3e9650`, local only, not pushed). This is an exception to D14 (human merges), asked for by the human. D14 is unchanged.
 - `unity-check` on `main`: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, 0 errors, 0 warnings`. Script tests `61 passed in 29.70s`. Wait-ready: compile 0.05 s, reload 4.6 s.
