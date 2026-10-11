@@ -18,6 +18,12 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — folder rename (Claude Code)
+- Renamed `Test Enviroments` to `Test Environments` (Editor closed by Alexandros first) on `task/rename-test-environments`: `git mv`, 20 references in 8 files updated, `Library/` moved along with the folder. No scripts referenced the old name.
+- Unity not yet reopened and `unity-check` not yet run on the new path: Alexandros reopens the project from `Test Environments/Unity Agentic Kit test`, then the agent runs `unity-check`. Expect a longer first import (Library cache keyed to the old path).
+- The file gates (`format_check`, `code_rules`) FAIL on this branch only because git sees every file under the folder as changed (rename), so they pick up pre-existing Unity template files (`TutorialInfo/...`, known trailing whitespace). `asset_check` PASS 32 assets, 32 .meta. Not a regression; do not fix the template files for this.
+- Open question closed: chose plain files over a plugin until a second project needs the kit. Git LFS: left to the user of the kit, not the kit's concern.
+
 ### 2026-10-11 — Task 003 merged (Claude Code)
 - At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/003-code-rules-analyzers` (`548dc8f..16250e1`, local only, not pushed). Exception to D14 asked for by the human; D14 is unchanged.
 - `unity-check` on `main` (no card): `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings`. File gates `PASS format: 0 files` · `PASS assets: 32 assets, 32 .meta, 0 changed in git` · `PASS code-rules: 0 files, 0 new violations, 0 suppressed` (1.5 s together); script tests `167 passed in 71.01s`; no `CS8032`; tests 0.67 s, job 5.4 s. Compile after the branch switch took ~39 s this time (files changed on disk), reload 5 s.
@@ -39,7 +45,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
   3. Probe evidence above.
   4. Full gate on this branch with this card: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, ~14s` — file gates `PASS format: 0 files` · `PASS assets: 32 assets, 32 .meta, 5 changed in git` · `PASS scope: 13 changed files in scope, tests may-not-change` · `PASS code-rules: 0 files, 0 new violations, 0 suppressed`; wait-ready: compile 0.05 s, reload 4.1 s; tests 0.67 s, job 5.3 s; no `CS8032`, console errors and warnings empty after the run.
   5. Negative runs:
-     - (a) `Debug.Log("x");` added to `SpikeMath.Lerp01` (Edit tool): `FAIL code-rules: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(7,13): KIT004 Debug.Log left in runtime code` (exit 1, before any compile). Reverted with the Edit tool (`git diff` of the file empty), re-run: `PASS code-rules: 0 files, 0 new violations, 0 suppressed`.
+     - (a) `Debug.Log("x");` added to `SpikeMath.Lerp01` (Edit tool): `FAIL code-rules: Test Environments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(7,13): KIT004 Debug.Log left in runtime code` (exit 1, before any compile). Reverted with the Edit tool (`git diff` of the file empty), re-run: `PASS code-rules: 0 files, 0 new violations, 0 suppressed`.
      - (b) `Assets/Kit/Spike/Runtime/AnalyzerProbe.cs`: console after compile: `AnalyzerProbe.cs(13,25): error UNT0010: Component 'AnalyzerProbe' should not be instantiated directly.` → `FAIL compile: ... error UNT0010 ...`. The file gates stop earlier on a probe (`FAIL assets: missing .meta`, then `FAIL scope: outside card scope`), as designed, so the compile run was done with the probe present and the compile steps only. Deleted through the Editor (`delete_script`), console clean afterwards, final gate PASS (4).
   6. File gates (4 scripts) together: 1.9 s (budget 15 s).
   7. No changes under `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `ProjectSettings/`, `Packages/`. New `.meta` files, all created by Unity: `Assets/Kit/Analyzers.meta`, the DLL's, and `Assets/Default.ruleset.meta` (the card expected only the first two; the third comes with the ruleset fallback, which the scope block allows). The DLL's `.meta` shows `labels: - RoslynAnalyzer` and Any/Editor `enabled: 0`.
@@ -80,7 +86,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
   1. `uv run --no-project --with pytest pytest scripts/unity/tests -q` → `42 passed in 22.06s` (format tests ran `dotnet format`, none skipped).
   2. On the real project: `PASS format: 0 files` · `PASS assets: 29 assets, 29 .meta, 0 changed in git` · `PASS scope: 15 changed files in scope, tests may-not-change` (all exit 0).
   3. Full `unity-check`: `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, 0 errors, 0 warnings, ~11s` (wait-ready: compile 1.15 s, reload 3.1 s; job 5.4 s, tests 0.67 s).
-  4. Negative run: trailing whitespace in `SpikeMath.cs` → `FAIL format: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,36): error WHITESPACE: Fix whitespace formatting. Replace 12 characters with '\r\n\s\s\s\s\s\s\s\s'.` exit 1, no `refresh_unity` call. Restored from a backup (`cmp` identical), re-ran: PASS.
+  4. Negative run: trailing whitespace in `SpikeMath.cs` → `FAIL format: Test Environments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,36): error WHITESPACE: Fix whitespace formatting. Replace 12 characters with '\r\n\s\s\s\s\s\s\s\s'.` exit 1, no `refresh_unity` call. Restored from a backup (`cmp` identical), re-ran: PASS.
   5. File gates: 1.3 s with no changed `.cs`, 2.25 s for the format gate alone with one changed file (budget 15 s).
   6. The scope gate passes on this branch's own diff (above).
   7. No changes under `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `ProjectSettings/`, `Packages/`; no `.meta` in the diff.

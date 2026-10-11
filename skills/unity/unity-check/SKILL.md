@@ -9,7 +9,7 @@ description: The Unity verification gate. Run the file gates (format, asset inte
 At the end of every Unity change, before you report done, commit or hand off. A task is not done while this gate fails.
 
 ## Inputs & access
-- The Unity project path, relative to the repo root (test project: `Test Enviroments/Unity Agentic Kit test`).
+- The Unity project path, relative to the repo root (test project: `Test Environments/Unity Agentic Kit test`).
 - The task card, `docs/tasks/<NNN-name>.md`, for the scope gate. If there is no card (for example a check on `main`), the scope gate does not run and the result line says `scope: no card`.
 - Python scripts in `scripts/unity/` (run from the repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
 - Skill `unity-wait-ready` (step 1 below).
@@ -53,11 +53,11 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 One line, then evidence:
 - `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
 - `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
-- `FAIL format: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,32): error WHITESPACE: Fix whitespace formatting. ...`
-- `FAIL assets: staged without its .meta: Test Enviroments/Unity Agentic Kit test/Assets/Kit/New.cs`
+- `FAIL format: Test Environments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,32): error WHITESPACE: Fix whitespace formatting. ...`
+- `FAIL assets: staged without its .meta: Test Environments/Unity Agentic Kit test/Assets/Kit/New.cs`
 - `FAIL scope: outside card scope: scripts/other.py`
-- `FAIL scope: needs approval (ProjectSettings/Packages): Test Enviroments/Unity Agentic Kit test/ProjectSettings/ProjectSettings.asset`
-- `FAIL code-rules: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(12,9): KIT004 Debug.Log left in runtime code`
+- `FAIL scope: needs approval (ProjectSettings/Packages): Test Environments/Unity Agentic Kit test/ProjectSettings/ProjectSettings.asset`
+- `FAIL code-rules: Test Environments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(12,9): KIT004 Debug.Log left in runtime code`
 - `FAIL analyzers: not loaded: warning CS8032: An instance of analyzer ... cannot be created ...`
 - `FAIL compile: SpikeMath.cs(9,35): error CS1002: ; expected`
 - `FAIL tests 2/3: Kit.Spike.Tests.SpikeMathTests.Lerp01_Midpoint_ReturnsAverage - Expected: 6.0d ... But was: 5.0d`

@@ -2,7 +2,7 @@
 
 Goal: prove that an agent in Claude Code can run the full loop **edit → refresh/compile → wait → read console → run tests → read results** through UnityMCP, with no human relaying anything. Record every friction point; they become the kit's first scripts and rules.
 
-Branch: `spike/001-unity-loop` · Project: `Test Enviroments/Unity Agentic Kit test/`
+Branch: `spike/001-unity-loop` · Project: `Test Environments/Unity Agentic Kit test/`
 Time-box: one session.
 
 ## Steps (agent)

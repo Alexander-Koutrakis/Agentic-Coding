@@ -1,6 +1,6 @@
 # Task 003 — Code rules and Roslyn analyzers
 
-Branch: `task/003-code-rules-analyzers` (stacked on `task/002-cheap-gates`) · Project: `Test Enviroments/Unity Agentic Kit test/` · Plan: §4.5, "before done" tier
+Branch: `task/003-code-rules-analyzers` (stacked on `task/002-cheap-gates`) · Project: `Test Environments/Unity Agentic Kit test/` · Plan: §4.5, "before done" tier
 Pipeline: implementer → `unity-check` → reviewer (fresh context, checks the diff against this card) → report to Alexandros.
 
 ## Goal
@@ -24,9 +24,9 @@ Do Part A first: it needs no approvals. Part B starts with a probe (B1) whose re
 allow:
   - scripts/unity/**
   - skills/unity/unity-check/SKILL.md
-  - Test Enviroments/Unity Agentic Kit test/.editorconfig
-  - Test Enviroments/Unity Agentic Kit test/Assets/Kit/Analyzers/**
-  - Test Enviroments/Unity Agentic Kit test/Assets/Default.ruleset
+  - Test Environments/Unity Agentic Kit test/.editorconfig
+  - Test Environments/Unity Agentic Kit test/Assets/Kit/Analyzers/**
+  - Test Environments/Unity Agentic Kit test/Assets/Default.ruleset
   - docs/tasks/003-code-rules-analyzers.md
   - docs/HANDOFF.md
   - docs/IMPLEMENTATION_PLAN.md

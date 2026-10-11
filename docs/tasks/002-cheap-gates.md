@@ -1,6 +1,6 @@
 # Task 002 — Cheap gates (format, asset integrity, scope)
 
-Branch: `task/002-cheap-gates` · Project: `Test Enviroments/Unity Agentic Kit test/` · Plan: §4.5
+Branch: `task/002-cheap-gates` · Project: `Test Environments/Unity Agentic Kit test/` · Plan: §4.5
 Pipeline: implementer → `unity-check` → reviewer (fresh context, checks the diff against this card) → report to Alexandros.
 Status: **implemented 2026-10-11, gate PASS; awaiting review and merge.** Evidence in `docs/HANDOFF.md`.
 
@@ -22,7 +22,7 @@ The scope gate (part 3) reads this block. Paths are relative to the repo root; `
 allow:
   - scripts/unity/**
   - skills/unity/unity-check/SKILL.md
-  - Test Enviroments/Unity Agentic Kit test/.editorconfig
+  - Test Environments/Unity Agentic Kit test/.editorconfig
   - docs/tasks/002-cheap-gates.md
   - docs/HANDOFF.md
   - docs/IMPLEMENTATION_PLAN.md
@@ -34,11 +34,11 @@ tests: may-not-change
 
 ### 0. Shared conventions (all three scripts)
 - Location: `scripts/unity/`. Python standard library only, run with `uv run --no-project python scripts/unity/<name>.py ...`.
-- Arguments: `--repo <path>` (default: current folder), `--project <path relative to repo>` (required; never hardcode `Test Enviroments/...`, because the folder may be renamed, plan §6), `--base <ref>` (default `main`).
+- Arguments: `--repo <path>` (default: current folder), `--project <path relative to repo>` (required; never hardcode `Test Environments/...`, because the folder may be renamed, plan §6), `--base <ref>` (default `main`).
 - **Changed files** = `git diff --name-status <merge-base(base, HEAD)>` + staged + unstaged + untracked files (`git status --porcelain=v1 -z`), with renames tracked. Put this in one shared module (`scripts/unity/changed_files.py`) that all three scripts use.
 - Output: **one line** on stdout, `PASS <gate>: <summary>` or `FAIL <gate>: <first problem>`, then at most 10 detail lines. The full report goes to `.agent/logs/<gate>.txt` (already gitignored).
 - Exit codes: `0` PASS, `1` FAIL, `2` usage or environment error (bad path, not a git repo, missing tool).
-- Paths contain spaces (`Test Enviroments/Unity Agentic Kit test`). Never build shell command strings; call `subprocess` with argument lists.
+- Paths contain spaces (`Test Environments/Unity Agentic Kit test`). Never build shell command strings; call `subprocess` with argument lists.
 
 ### 1. Format gate — `scripts/unity/format_check.py` + `.editorconfig`
 - Add `.editorconfig` at the test project root (`root = true`), with C# whitespace rules only: `indent_style = space`, `indent_size = 4`, `trim_trailing_whitespace = true`, `insert_final_newline = true`, plus the `csharp_new_line_*` / `csharp_space_*` rules that match the existing `Assets/Kit/Spike/**/*.cs` files.

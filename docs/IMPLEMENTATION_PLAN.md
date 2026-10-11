@@ -33,7 +33,7 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D12 | 2026-10-10 | Spike 001 merged into `main` (done 2026-10-11, fast-forward). `Assets/Kit/Spike` stays in the test project as the **canary** fixture: the known-good reference for `unity-check` (3 EditMode tests). | The gate needs a fixture that must always pass. |
 | D13 | 2026-10-10 | Until we package the kit (plugin vs `.claude/skills`, open question), `CLAUDE.md` points to skills by path, so they are followed every time instead of relying on auto-discovery. | Deterministic for now; packaging decided later. |
 | D14 | 2026-10-11 | **Merge routine:** agents finish on a task branch and never push or merge. Alexandros reviews and merges into `main` (GitHub PR preferred, local merge allowed), then `unity-check` must PASS on `main`. | One human gate on what lands in `main`. |
-| D10 | 2026-10-10 | Test project: `Test Enviroments/Unity Agentic Kit test` — Unity **6000.3.10f1**, **URP 17.3**, Test Framework 1.6.0. Root `.gitignore` always ignores `Library/`; each Unity project has its own anchored `.gitignore`. | Reproducible sandbox for the kit. |
+| D10 | 2026-10-10 | Test project: `Test Environments/Unity Agentic Kit test` — Unity **6000.3.10f1**, **URP 17.3**, Test Framework 1.6.0. Root `.gitignore` always ignores `Library/`; each Unity project has its own anchored `.gitignore`. | Reproducible sandbox for the kit. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
 ## 4. Architecture (draft)
@@ -133,7 +133,7 @@ review pack (repo zip for a bigger model), approval list.
 - [x] Unity version / pipeline for the test project → 6000.3.10f1, URP (D10).
 - [x] MCP bridge → CoplayDev/unity-mcp, stdio (D9). Pin to a release tag instead of `#main`.
 - [ ] Git LFS + Unity YAML merge (`.gitattributes`) for binary assets and scenes?
-- [ ] Rename folders without spaces/typos (`Test Enviroments`) before scripts depend on the paths?
+- [ ] Rename folders without spaces/typos (`Test Environments`) before scripts depend on the paths?
 - [ ] Unity branching: one branch per task, or work on a single feature branch with a commit per task?
 - [x] While an agent runs, does the human keep using the Editor? → No, human steps away (D6).
 - [ ] Reference machine + resolution for perf budgets; render pipeline (URP/HDRP/custom SRP).

@@ -1,5 +1,5 @@
 # ---- Kit repo (root) ----
-# Unity projects carry their own .gitignore (see Test Enviroments/*/.gitignore).
+# Unity projects carry their own .gitignore (see Test Environments/*/.gitignore).
 # Safety net: never commit a Unity Library folder, wherever a project lives.
 [Ll]ibrary/
 

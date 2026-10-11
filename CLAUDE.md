@@ -5,7 +5,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 
 ## Layout
 - Kit docs: `docs/` · spikes: `docs/spikes/` · skills: `skills/<track>/<name>/SKILL.md`
-- Unity test project: `Test Enviroments/Unity Agentic Kit test/` (Unity 6000.3.10f1, URP 17.3)
+- Unity test project: `Test Environments/Unity Agentic Kit test/` (Unity 6000.3.10f1, URP 17.3)
 - The Unity Editor is open and reachable through the `UnityMCP` MCP server. The human is not using the Editor while you work.
 
 ## The gate (Unity)
