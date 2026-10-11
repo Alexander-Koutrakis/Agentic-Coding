@@ -1,6 +1,6 @@
 ---
 name: unity-check
-description: The Unity verification gate. Run the file gates (format, asset integrity, scope), then refresh and compile, read console errors, run EditMode (and optionally PlayMode) tests through UnityMCP, and return one PASS/FAIL line with evidence. Use before saying any Unity task is done.
+description: The Unity verification gate. Run the file gates (format, asset integrity, scope, code rules), then refresh and compile, read console errors, run EditMode (and optionally PlayMode) tests through UnityMCP, and return one PASS/FAIL line with evidence. Use before saying any Unity task is done.
 ---
 
 # unity-check
@@ -23,15 +23,17 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    uv run --no-project python scripts/unity/format_check.py --project "<project>"
    uv run --no-project python scripts/unity/asset_check.py --project "<project>"
    uv run --no-project python scripts/unity/scope_check.py --project "<project>" --card docs/tasks/<card>.md
+   uv run --no-project python scripts/unity/code_rules.py --project "<project>"
    ```
    No task card (for example a check on `main`): skip the scope command and write `scope: no card` in the result line.
    Each prints one `PASS`/`FAIL <gate>: ...` line and up to 10 details. The full report is in `.agent/logs/<gate>.txt`. `--base` defaults to `main`.
    - Exit 1: the gate's `FAIL <gate>: ...` line **is** the result line; paste it and its details.
    - Exit 2 (`ERROR <gate>: ...`, a bad path, missing tool or unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
-   - All exit 0: carry the summaries into the final PASS line as `format <N> files, assets ok, scope ok`.
+   - All exit 0: carry the summaries into the final PASS line as `format <N> files, assets ok, scope ok, code-rules ok`.
    - **format:** changed `.cs` files under `Assets/` vs the project's `.editorconfig`. Fix the file; never reformat files the task did not touch.
    - **assets:** `.meta` pairs, orphans, GUIDs on disk; `.meta` staged/committed together with its asset. Never write a `.meta` by hand: fix it through the Editor (refresh) or ask.
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.
+   - **code-rules:** new violations only, in changed non-test `.cs` files: KIT001 `UnityEditor` in runtime code outside `#if UNITY_EDITOR`, KIT002 scene searches/`SendMessage` and KIT003 LINQ in `Update`/`LateUpdate`/`FixedUpdate`/`OnGUI`, KIT004 `Debug.Log`. Fix the code. A justified exception is `// kit-allow KIT00N: <reason>` (same line, or alone on the line above); the PASS line counts them, so the reviewer sees them. Never add a `kit-allow` just to pass without a real reason.
 1. **Compile.** Run `unity-wait-ready`. If it does not report ready, the gate is FAIL.
 2. **Console errors.** `read_console` with `action="get"`, `types=["error"]`, `count="20"`. Ignore only the bridge's own lines: their text starts with `MCP-FOR-UNITY` after rich-text tags (`<b><color=#cc3333>MCP-FOR-UNITY</color></b>: ...`). Any other error means FAIL, and the entries (file, line, column, CS code) are the evidence. If there are errors, stop here; do not run tests against stale assemblies.
 3. **Warnings.** `read_console` with `types=["warning"]`. Report them, but ignore the bridge's own `MCP-FOR-UNITY` lines (as in step 2). Warnings you introduced are fixed; others are listed.
@@ -48,12 +50,13 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 
 ## What to return
 One line, then evidence:
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, 0 errors, 0 warnings, 11s`
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, 0 errors, 0 warnings, 11s`
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, 0 errors, 0 warnings, 11s`
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, 0 errors, 0 warnings, 11s`
 - `FAIL format: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,32): error WHITESPACE: Fix whitespace formatting. ...`
 - `FAIL assets: staged without its .meta: Test Enviroments/Unity Agentic Kit test/Assets/Kit/New.cs`
 - `FAIL scope: outside card scope: scripts/other.py`
 - `FAIL scope: needs approval (ProjectSettings/Packages): Test Enviroments/Unity Agentic Kit test/ProjectSettings/ProjectSettings.asset`
+- `FAIL code-rules: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(12,9): KIT004 Debug.Log left in runtime code`
 - `FAIL compile: SpikeMath.cs(9,35): error CS1002: ; expected`
 - `FAIL tests 2/3: Kit.Spike.Tests.SpikeMathTests.Lerp01_Midpoint_ReturnsAverage - Expected: 6.0d ... But was: 5.0d`
 
