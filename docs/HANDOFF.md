@@ -12,12 +12,23 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Next step
 1. Alexandros: review and merge `task/002-cheap-gates` into `main` (it is stacked on `docs/handoff-2026-10-11`, so one merge brings both). Then run `unity-check` on `main` (scope: no card).
-2. Next gates (plan §4.5, "before done" tier): code-rules script (banned APIs, `UnityEditor` in runtime asmdefs) and the Roslyn analyzers gate. Needs a task card.
+2. **Task 003 — code rules + Roslyn analyzers**: card ready at `docs/tasks/003-code-rules-analyzers.md` (branch `task/003-code-rules-analyzers`, stacked on Task 002). Alexandros: review the card. Part A (code rules script) needs no approvals; Part B needs a yes for the NuGet download of Microsoft.Unity.Analyzers 1.28.0.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
 
 ## Session log
+### 2026-10-11 — Task 003 card (Claude Code)
+- Wrote `docs/tasks/003-code-rules-analyzers.md`: Part A = `code_rules.py` (KIT001 `UnityEditor` in runtime code, KIT002 scene searches/`SendMessage` in per-frame methods, KIT003 LINQ there, KIT004 `Debug.Log`; new violations only; `// kit-allow` with a reason); Part B = Microsoft.Unity.Analyzers in Unity's compile, severities in `.editorconfig`.
+- Research (Unity 6.3 manual, NuGet, the analyzers' `doc/index.md`):
+  - Unity loads an analyzer only from a DLL in `Assets/` with the asset label `RoslynAnalyzer` and all platforms off (both `.meta` data → Editor only).
+  - The two manual pages disagree on scope: "analyzers in the root of Assets apply to all predefined assemblies" vs "Unity considers all files in the project to be in scope". Our code is in custom asmdefs, so the card starts with a probe (B1).
+  - Severity: `Default.ruleset` in `Assets/` for all assemblies, or `.editorconfig` `dotnet_diagnostic.<id>.severity` (documented with an example).
+  - UNT rules are mostly IDE suggestions by default, so without severities they would not show as warnings or errors.
+  - The generated `.csproj` already references VS 2022's bundled `Microsoft.Unity.Analyzers.dll`; that is IDE-only, Unity's compile does not use it.
+  - Microsoft.Unity.Analyzers 1.28.0 (nuget.org, 164.76 KB, released ~12 days ago), 46 UNT rules + 23 suppressors.
+- Not done: the implementation.
+
 ### 2026-10-11 — Task 002 implemented (Claude Code)
 - Built `scripts/unity/` (`gate_common.py`, `changed_files.py`, `format_check.py`, `asset_check.py`, `scope_check.py`) + 42 pytest tests; `.editorconfig` in the test project; `unity-check` step 0.
 - Acceptance evidence:
