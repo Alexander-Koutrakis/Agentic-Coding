@@ -8,6 +8,12 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - Unity test project: `Test Environments/Unity Agentic Kit test/` (Unity 6000.3.10f1, URP 17.3)
 - The Unity Editor is open and reachable through the `UnityMCP` MCP server. The human is not using the Editor while you work.
 
+## Feature pipeline (plan §4.6)
+- Roles are skills in `skills/roles/<role>/SKILL.md` (architect, director, plan-reviewer, csharp-coder, shader-coder, code-reviewer). When you act as a role, read its file first and follow it.
+- Style guides: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`). Load only the ones your role file names.
+- Formats: `templates/` (`feature.md`, `implementation-plan.md`, `task-card.md`). Briefs live in `docs/features/<name>/`, cards in `docs/tasks/`.
+- Repeated mistakes go to `logs/friction-log.md`.
+
 ## The gate (Unity)
 - IMPORTANT: after any change to scripts or assets, follow `skills/unity/unity-wait-ready/SKILL.md`. Never trust the return value of `refresh_unity`; it returns while still compiling.
 - IMPORTANT: before saying a Unity task is done, committing or handing off, follow `skills/unity/unity-check/SKILL.md` and paste its result line plus the real evidence. No PASS line, not done.
