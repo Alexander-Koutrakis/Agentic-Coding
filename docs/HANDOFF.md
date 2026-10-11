@@ -4,20 +4,24 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **0 — Foundation (planning)**; Spike 001 done on branch `spike/001-unity-loop` (not merged).
-- Repo contains: docs, Unity test project, and the spike code `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green). No skills or scripts yet.
+- Phase: **1 — Verification (Unity)**. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
+- Repo contains: docs, CLAUDE.md, gate skills, Unity test project with the canary fixture `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
 - Open (plan §6): the questions still unchecked.
 
 ## Next step
 1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
-2. Review the spike branch; merge it or cherry-pick. Decide whether the spike code stays in the test project.
-3. ~~Build `unity_wait_ready` + `unity_check`~~ done as skills in `skills/unity/` (not scripts, see below). Remaining: CLAUDE.md rules (proposals 3–4); decide how skills get discovered by Claude Code (`.claude/skills/` vs plugin, plan §6). Investigate what rewrote `SpikeMathTests.cs` (friction #3) and pin unity-mcp to a release tag.
+2. ~~Merge spike branch~~ (D12) · ~~CLAUDE.md rules~~ (gate, console, re-read, profiler, bridge port).
+3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — check whether an IDE with format-on-save was open).
 4. Next spike: profiler/perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
 6. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
 
 ## Session log
+### 2026-10-10 — review of Spike 001 (Cowork)
+- Reviewed spike results and both gate skills: accepted. Decisions D11 (gates are skills over MCP), D12 (merge; Spike code stays as canary), D13 (CLAUDE.md references skills by path).
+- CLAUDE.md: added gate section and rules from proposals 3–5 and friction #11 (no direct bridge connection).
+
 ### 2026-10-10 (spike follow-up) — gate skills + profiler rerun
 - Profiler rerun, Editor focused: Edit Mode still gives zeros; in Play Mode (profiler on) draw calls 24, triangles 1703, GPU 0.48 ms, CPU main ~1.1 ms. First sample after entering Play is warm-up. Details in the spike doc.
 - Decision: `unity_wait_ready` / `unity_check` are **skills over MCP calls**, not Python scripts. Reason: the stdio bridge closes other clients when a new one connects (StdioBridgeHost.cs:605-620), so a script would cut Claude Code's own link. HTTP transport would make scripts possible later.

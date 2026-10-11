@@ -29,6 +29,9 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D7 | 2026-10-10 | Every graphics feature ships with a **perf harness** and a **budget**; the feature isn't done until the harness runs and the result is within budget (see §4.4). **v1 uses the Unity Profiler in the Editor only**; player builds later. | Performance is part of correctness for graphics work. |
 | D8 | 2026-10-10 | **Unity kit first**, finished before starting the pure-code (C++/Vulkan) kit. | Focus. |
 | D9 | 2026-10-10 | Kit runs in **Claude Code**; Unity bridge = **CoplayDev/unity-mcp over stdio**. | Claude Code supports skills, hooks, subagents; stdio keeps it local. |
+| D11 | 2026-10-10 | Unity gates are **skills over UnityMCP calls** (`unity-wait-ready`, `unity-check`), not Python scripts. | The stdio bridge closes other clients when a new one connects, so a script would cut Claude Code's link. Revisit with HTTP transport if script gates become necessary. |
+| D12 | 2026-10-10 | Spike 001 merged into `main`. `Assets/Kit/Spike` stays in the test project as the **canary** fixture: the known-good reference for `unity-check` (3 EditMode tests). | The gate needs a fixture that must always pass. |
+| D13 | 2026-10-10 | Until we package the kit (plugin vs `.claude/skills`, open question), `CLAUDE.md` points to skills by path, so they are followed every time instead of relying on auto-discovery. | Deterministic for now; packaging decided later. |
 | D10 | 2026-10-10 | Test project: `Test Enviroments/Unity Agentic Kit test` — Unity **6000.3.10f1**, **URP 17.3**, Test Framework 1.6.0. Root `.gitignore` always ignores `Library/`; each Unity project has its own anchored `.gitignore`. | Reproducible sandbox for the kit. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
@@ -89,6 +92,25 @@ Per feature, the agent must provide:
 - **Baseline** committed once accepted; later runs compare against it.
 
 Known caveats: Editor numbers are noisy and unrepresentative → use for quick checks only, compare relative (ON vs OFF, vs baseline on same machine); real numbers come from a development player build (later phase). Use medians of several runs and a tolerance (e.g. 5–10%).
+
+### 4.5 Unity gate ladder (proposed, 2026-10-10)
+`unity-check` becomes a list of gates, run cheapest first, stop at the first FAIL. Gates that only read files on disk (format, metas, scope, banned APIs) may be plain Python scripts: D11 only forbids scripts that talk to the bridge.
+
+| Tier | Gate | How | Status |
+|---|---|---|---|
+| Every iteration | **Format** | `.editorconfig` + `dotnet format --verify-no-changes` on changed files (uses Unity-generated `.sln`) | to build |
+| | **Compile + console** | `unity-wait-ready` + console errors | built |
+| Before "done" | **Analyzers** | Roslyn analyzers (incl. Microsoft.Unity.Analyzers) as Unity RoslynAnalyzer DLLs; severities in `.editorconfig`; their warnings show in the console | to build |
+| | **Code rules** | script: no `UnityEditor` in runtime asmdefs without `#if UNITY_EDITOR`, banned APIs in hot paths (`GameObject.Find`, `FindObjectOfType`, LINQ/allocations in `Update`), no leftover `Debug.Log` | to build |
+| | **Asset integrity** | script: every file under `Assets/` has a `.meta`, no orphan `.meta`, no duplicate GUIDs; MCP: no missing scripts in changed scenes/prefabs | to build |
+| | **Scope** | script on `git diff`: only files the task card allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval | to build |
+| | **Tests** | EditMode (built) + PlayMode; new code has new tests | partly built |
+| Graphics feature | **Shader** | shader compile errors/warnings via console/MCP | to build |
+| | **Perf** | harness exists, runs in Play Mode, within budget, 0 GC alloc in hot path (D7 / §4.4) | next spike |
+| | **Visual** | fixed-camera screenshot vs reference image with tolerance | later |
+| Before merge | **Player build** | development build compiles (catches Editor-only code in runtime) + full test suite | later |
+
+Pipeline per task: task card (goal, scope, budget, acceptance) → **implementer** works and loops on the gate until PASS (give up after N tries → report BLOCKED with evidence) → **reviewer** agent in a fresh context checks the diff against the task card (the gate proves it works, the reviewer checks it is what was asked) → report to human with the PASS line, evidence and review notes.
 
 ### 4.3 Shared core
 Single gate command per project (`check`), progress/handoff protocol, task cards, friction log,
