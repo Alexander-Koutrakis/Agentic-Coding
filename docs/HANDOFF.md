@@ -23,6 +23,9 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Unity not yet reopened and `unity-check` not yet run on the new path: Alexandros reopens the project from `Test Environments/Unity Agentic Kit test`, then the agent runs `unity-check`. Expect a longer first import (Library cache keyed to the old path).
 - The file gates (`format_check`, `code_rules`) FAIL on this branch only because git sees every file under the folder as changed (rename), so they pick up pre-existing Unity template files (`TutorialInfo/...`, known trailing whitespace). `asset_check` PASS 32 assets, 32 .meta. Not a regression; do not fix the template files for this.
 - Open question closed: chose plain files over a plugin until a second project needs the kit. Git LFS: left to the user of the kit, not the kit's concern.
+- `unity-check` run after Unity was reopened on the new path: as written `FAIL format` (ReadmeEditor.cs, template file flagged only because the rename shows every file as changed vs `main`). Extra evidence: file gates with `--base HEAD` all PASS (format 0 files, assets 32/32, code-rules 0), compile 0.07 s + reload ~3 s, analyzers load (no CS8032), console 0 errors / 0 warnings, `3/3 EditMode` in 0.67 s.
+- Found: the Unity instance ID hash depends on the project path, so the rename changed `@6b88ab86` to `@f7afd68e`; UnityMCP needed `set_active_instance` and returned a mostly-null editor state until then. Added to `unity-wait-ready` step 3.
+- Next: Alexandros merges the branch, then `unity-check` on `main` (no card) should PASS.
 
 ### 2026-10-11 — Task 003 merged (Claude Code)
 - At Alexandros's explicit request in chat, the agent fast-forwarded `main` to `task/003-code-rules-analyzers` (`548dc8f..16250e1`, local only, not pushed). Exception to D14 asked for by the human; D14 is unchanged.

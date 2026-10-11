@@ -24,6 +24,7 @@ Why it exists: `refresh_unity` returns at once with `resulting_state: "compiling
    - `data.advice.ready_for_tools` is true
    - `data.compilation.last_compile_finished_unix_ms` is greater than `B`, **or** step 2 reported `compile_started: false`
    - If `blocking_reasons` is `["stale_status"]` and `observed_at_unix_ms` has not changed since your last read, re-reading the resource does not help (seen with the Editor focused, 6 s+). Make one cheap tool call (`read_console` with `count="1"`) and read the resource again; the snapshot refreshed after that call in the Spike 001 follow-up. Cause not established.
+   - If the resource comes back mostly `null` (`compilation: null`, `unity_version: null`) or a tool says `Unity instance '...' not found`, the active instance is stale. Unity's instance ID is `Name@hash` and the hash depends on the project path, so renaming or moving the project folder changes it. Read `mcpforunity://instances`, call `set_active_instance` with the new `Name@hash`, then start again at step 1.
 4. Give up after about 120 s of polling. Report "still compiling after 120 s" with the last state; do not carry on.
 
 ## How to validate
