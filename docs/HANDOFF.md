@@ -7,12 +7,16 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Phase: **1 — Verification (Unity)**. Branch `main` contains Spike 001, the gate skills `unity-wait-ready` + `unity-check` (`skills/unity/`), CLAUDE.md rules and the canary fixture `Assets/Kit/Spike/` (3 EditMode tests).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope (Task 002, on branch `task/002-cheap-gates`), compile + console, EditMode tests. `unity-check` step 0 runs the three file gates (`scripts/unity/*.py`) before compiling.
-- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
+- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block. Branches: `task/002-cheap-gates` (done, reviewed, awaiting merge) → `task/003-code-rules-analyzers` (card only, stacked on 002).
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
 
 ## Next step
-1. Alexandros: review and merge `task/002-cheap-gates` into `main` (it is stacked on `docs/handoff-2026-10-11`, so one merge brings both). Then run `unity-check` on `main` (scope: no card).
-2. **Task 003 — code rules + Roslyn analyzers**: card ready at `docs/tasks/003-code-rules-analyzers.md` (branch `task/003-code-rules-analyzers`, stacked on Task 002). Alexandros: review the card. Part A (code rules script) needs no approvals; Part B needs a yes for the NuGet download of Microsoft.Unity.Analyzers 1.28.0.
+1. Alexandros: review and merge `task/002-cheap-gates` into `main` (it is stacked on `docs/handoff-2026-10-11`, so one merge brings both). Then run `unity-check` on `main` (expect `scope: no card`).
+   - Fast-forward or merge commit: `task/003-code-rules-analyzers` already sits on top of those commits; nothing to do.
+   - **Squash merge:** first move the card commit onto the new `main`: `git rebase --onto main task/002-cheap-gates task/003-code-rules-analyzers`.
+2. **Task 003 — code rules + Roslyn analyzers**, handed to a **fresh agent session** (decided 2026-10-11: tests that HANDOFF + card are enough, keeps the context clean, one task per review). Card: `docs/tasks/003-code-rules-analyzers.md` on branch `task/003-code-rules-analyzers`. Alexandros reviews the card first. Part A needs no approvals; Part B needs a yes for the NuGet download of Microsoft.Unity.Analyzers 1.28.0, so stay reachable. Start the session at the repo root with:
+   > Switch to branch task/003-code-rules-analyzers. Read docs/HANDOFF.md and docs/IMPLEMENTATION_PLAN.md, then implement docs/tasks/003-code-rules-analyzers.md. Do Part A first. Ask me before the NuGet download in step B1.
+   - The implementing agent: check `git log main..HEAD` shows only the card commit (plus Task 002 if it is not merged yet), and that `uv run --no-project --with pytest pytest scripts/unity/tests -q` passes (61) before changing anything.
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
 4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
 5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
@@ -27,7 +31,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
   - UNT rules are mostly IDE suggestions by default, so without severities they would not show as warnings or errors.
   - The generated `.csproj` already references VS 2022's bundled `Microsoft.Unity.Analyzers.dll`; that is IDE-only, Unity's compile does not use it.
   - Microsoft.Unity.Analyzers 1.28.0 (nuget.org, 164.76 KB, released ~12 days ago), 46 UNT rules + 23 suppressors.
-- Not done: the implementation.
+- Not done: the implementation. Decided to hand Task 003 to a fresh session after Task 002 is merged (Next step 1–2 has the steps and the start prompt). Rebase not run: `main` does not have Task 002 yet, and after a fast-forward or merge-commit merge it is not needed.
 
 ### 2026-10-11 — Task 002 implemented (Claude Code)
 - Built `scripts/unity/` (`gate_common.py`, `changed_files.py`, `format_check.py`, `asset_check.py`, `scope_check.py`) + 42 pytest tests; `.editorconfig` in the test project; `unity-check` step 0.
