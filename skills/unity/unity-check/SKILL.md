@@ -35,8 +35,9 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.
    - **code-rules:** new violations only, in changed non-test `.cs` files: KIT001 `UnityEditor` in runtime code outside `#if UNITY_EDITOR`, KIT002 scene searches/`SendMessage` and KIT003 LINQ in `Update`/`LateUpdate`/`FixedUpdate`/`OnGUI`, KIT004 `Debug.Log`. Fix the code. A justified exception is `// kit-allow KIT00N: <reason>` (same line, or alone on the line above); the PASS line counts them, so the reviewer sees them. Never add a `kit-allow` just to pass without a real reason.
 1. **Compile.** Run `unity-wait-ready`. If it does not report ready, the gate is FAIL.
-2. **Console errors.** `read_console` with `action="get"`, `types=["error"]`, `count="20"`. Ignore only the bridge's own lines: their text starts with `MCP-FOR-UNITY` after rich-text tags (`<b><color=#cc3333>MCP-FOR-UNITY</color></b>: ...`). Any other error means FAIL, and the entries (file, line, column, CS code) are the evidence. If there are errors, stop here; do not run tests against stale assemblies.
-3. **Warnings.** `read_console` with `types=["warning"]`. Report them, but ignore the bridge's own `MCP-FOR-UNITY` lines (as in step 2). Warnings you introduced are fixed; others are listed.
+2. **Console errors.** `read_console` with `action="get"`, `types=["error"]`, `count="20"`. Ignore only the bridge's own lines: their text starts with `MCP-FOR-UNITY` after rich-text tags (`<b><color=#cc3333>MCP-FOR-UNITY</color></b>: ...`). Any other error means FAIL, and the entries (file, line, column, CS or UNT code) are the evidence. A `UNT` error is an analyzer error (Microsoft.Unity.Analyzers, severities in `Assets/Default.ruleset`): fix the code, do not weaken the ruleset. If there are errors, stop here; do not run tests against stale assemblies.
+   **Analyzers loaded?** Also read warnings once with `filter_text="CS8032"` and once with `filter_text="analyzer"`. Any `CS8032` or "analyzer ... could not be loaded" line means `FAIL analyzers: not loaded` plus that line. A gate that silently stops analyzing must not pass.
+3. **Warnings.** `read_console` with `types=["warning"]`. Report them, but ignore the bridge's own `MCP-FOR-UNITY` lines (as in step 2). Warnings you introduced are fixed; others are listed. List the `UNT` ones on their own line, `analyzer warnings: N` (performance rules; in v1 they do not fail the gate). N goes into the PASS line.
 4. **Run tests.** `run_tests` with `mode="EditMode"`, `assembly_names=[...]`, `include_failed_tests=true`. For PlayMode use `mode="PlayMode"` and `init_timeout=120000`. If a run is rejected as already running, call `run_tests` with `clear_stuck=true` once (a lost job after a domain reload) and retry once.
 5. **Wait for results.** `get_test_job` with `wait_timeout=30`. Repeat until `status` is `succeeded` or `failed`. One call is normally enough. Stop after about 5 minutes and report a timeout as FAIL.
 6. **Collect failures.** On `failed`, read `progress.failures_so_far[]` (`full_name`, `message`). The message holds expected vs actual.
@@ -50,13 +51,14 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 
 ## What to return
 One line, then evidence:
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, 0 errors, 0 warnings, 11s`
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, 0 errors, 0 warnings, 11s`
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
 - `FAIL format: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,32): error WHITESPACE: Fix whitespace formatting. ...`
 - `FAIL assets: staged without its .meta: Test Enviroments/Unity Agentic Kit test/Assets/Kit/New.cs`
 - `FAIL scope: outside card scope: scripts/other.py`
 - `FAIL scope: needs approval (ProjectSettings/Packages): Test Enviroments/Unity Agentic Kit test/ProjectSettings/ProjectSettings.asset`
 - `FAIL code-rules: Test Enviroments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(12,9): KIT004 Debug.Log left in runtime code`
+- `FAIL analyzers: not loaded: warning CS8032: An instance of analyzer ... cannot be created ...`
 - `FAIL compile: SpikeMath.cs(9,35): error CS1002: ; expected`
 - `FAIL tests 2/3: Kit.Spike.Tests.SpikeMathTests.Lerp01_Midpoint_ReturnsAverage - Expected: 6.0d ... But was: 5.0d`
 

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Severities for Microsoft.Unity.Analyzers 1.28.0 (Assets/Kit/Analyzers). Unity applies this file to every assembly
+     under Assets; .editorconfig severities are NOT applied by Unity's compile (Task 003, B1 probe).
+     error: correctness and type safety, so the compile gate fails. warning: performance, reported, not failing.
+     Left at the default: UNT0005 (retired), UNT0021 (opt-in style), UNT0034/UNT0035 (readability), UNT0039 (design advice). -->
+<RuleSet Name="Kit rules" Description="Severities for Microsoft.Unity.Analyzers" ToolsVersion="16.0">
+  <Rules AnalyzerId="Microsoft.Unity.Analyzers" RuleNamespace="Microsoft.Unity.Analyzers">
+    <!-- error: correctness and type safety -->
+    <Rule Id="UNT0003" Action="Error" />
+    <Rule Id="UNT0004" Action="Error" />
+    <Rule Id="UNT0006" Action="Error" />
+    <Rule Id="UNT0007" Action="Error" />
+    <Rule Id="UNT0008" Action="Error" />
+    <Rule Id="UNT0009" Action="Error" />
+    <Rule Id="UNT0010" Action="Error" />
+    <Rule Id="UNT0011" Action="Error" />
+    <Rule Id="UNT0012" Action="Error" />
+    <Rule Id="UNT0013" Action="Error" />
+    <Rule Id="UNT0014" Action="Error" />
+    <Rule Id="UNT0015" Action="Error" />
+    <Rule Id="UNT0016" Action="Error" />
+    <Rule Id="UNT0020" Action="Error" />
+    <Rule Id="UNT0023" Action="Error" />
+    <Rule Id="UNT0025" Action="Error" />
+    <Rule Id="UNT0027" Action="Error" />
+    <Rule Id="UNT0029" Action="Error" />
+    <Rule Id="UNT0030" Action="Error" />
+    <Rule Id="UNT0031" Action="Error" />
+    <Rule Id="UNT0033" Action="Error" />
+    <Rule Id="UNT0040" Action="Error" />
+    <Rule Id="UNT0043" Action="Error" />
+    <!-- warning: performance -->
+    <Rule Id="UNT0001" Action="Warning" />
+    <Rule Id="UNT0002" Action="Warning" />
+    <Rule Id="UNT0017" Action="Warning" />
+    <Rule Id="UNT0018" Action="Warning" />
+    <Rule Id="UNT0019" Action="Warning" />
+    <Rule Id="UNT0022" Action="Warning" />
+    <Rule Id="UNT0024" Action="Warning" />
+    <Rule Id="UNT0026" Action="Warning" />
+    <Rule Id="UNT0028" Action="Warning" />
+    <Rule Id="UNT0032" Action="Warning" />
+    <Rule Id="UNT0036" Action="Warning" />
+    <Rule Id="UNT0037" Action="Warning" />
+    <Rule Id="UNT0038" Action="Warning" />
+    <Rule Id="UNT0041" Action="Warning" />
+    <Rule Id="UNT0042" Action="Warning" />
+    <Rule Id="UNT0044" Action="Warning" />
+    <Rule Id="UNT0045" Action="Warning" />
+    <Rule Id="UNT0046" Action="Warning" />
+  </Rules>
+</RuleSet>
