@@ -1,5 +1,7 @@
 # Repo gate for what runs from a shell. Unity is gated through UnityMCP, not here (D11).
 
+set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
+
 # Default: show the recipes.
 default:
     @just --list

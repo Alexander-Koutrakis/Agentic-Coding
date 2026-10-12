@@ -28,7 +28,7 @@ Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, 
 - `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok (55 assets, 55 .meta), scope: no card, code-rules ok (0 new violations), analyzers on, 0 errors, 0 warnings`, on `main` at `c2718c1`. Compile 0.5 s, reload 5.4 s.
 - Extra, not part of the gate: PlayMode 3/3 in 36.6 s (perf canary, includes `SpikeWorkloadPerfTests.Marker_OnVsOff_IsReadableByName`). `just check`: 15 tests OK; pytest over `scripts/`: 227 passed.
 - Not run: the full `Kit.Perf` sweep (needs sweep points and budget agreed first).
-- `just check` now runs pytest over `scripts/` (227 passed, about 70 s), so it covers the pipeline and gate suites too. `just` itself is not installed on this PC; the recipe's command was run directly.
+- `just check` now runs pytest over `scripts/` (227 passed, about 70 s), so it covers the pipeline and gate suites too. `just` 1.58.0 installed via winget on this PC; justfile sets `windows-shell` to PowerShell because there is no `sh`.
 - HANDOFF trimmed: older log entries moved to `docs/archive/HANDOFF-log-2026-10.md`.
 
 ### 2026-10-12 (merge) — reconciled two machines
