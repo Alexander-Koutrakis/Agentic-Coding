@@ -8,6 +8,6 @@ default:
 check: test-scripts
     @echo "just check: shell-side checks passed. NOT covered: Unity (compile, console, tests). Run skills/unity/unity-check through UnityMCP."
 
-# Unit tests for the kit's Python scripts.
+# Unit tests for the kit's Python scripts (pytest; about 70 s).
 test-scripts:
-    python -I -m unittest discover -s scripts/unity -p "test_*.py"
+    uv run --no-project --with pytest pytest scripts -q
