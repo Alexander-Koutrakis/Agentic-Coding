@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Kit.Perf;
 using NUnit.Framework;
-using Unity.Profiling;
-using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
@@ -36,6 +34,12 @@ namespace Kit.Grass.Tests
         GrassFeature feature;
         Camera cam;
 
+        [SetUp]
+        public void SetUp()
+        {
+            infos.Clear(); // the fixture instance is shared between tests
+        }
+
         // One point, one run: proves the test wiring and that timing_frames == measured_frames.
         [UnityTest, Timeout(300000)]
         public IEnumerator Smoke_OnePoint()
@@ -64,6 +68,7 @@ namespace Kit.Grass.Tests
             yield return RunPoints(points.ToArray(), WholePose, "sweep");
             yield return RunPoints(new[] { FullCount }, HalfPose, "cull-half");
 
+            bool wasActive = feature.isActive;
             feature.SetActive(false);
             try
             {
@@ -71,7 +76,7 @@ namespace Kit.Grass.Tests
             }
             finally
             {
-                feature.SetActive(true);
+                feature.SetActive(wasActive);
             }
 
             foreach (RunInfo info in infos)
@@ -81,49 +86,6 @@ namespace Kit.Grass.Tests
             double first = Gpu(infos[0]);
             double last = Gpu(infos[points.Count - 1]);
             Assert.AreEqual(first, last, BaselineTolerance * Math.Max(first, last), "baseline N=0 gpu_ms drifted");
-        }
-
-        // Diagnostic for friction T1-13: which recorder category sees the grass marker, and with what values.
-        [UnityTest, Timeout(300000)]
-        public IEnumerator Marker_Category_Check()
-        {
-            yield return LoadScene();
-            SetCount(FullCount);
-            SetPose(WholePose);
-
-            var handles = new List<ProfilerRecorderHandle>();
-            ProfilerRecorderHandle.GetAvailable(handles);
-            foreach (ProfilerRecorderHandle h in handles)
-            {
-                ProfilerRecorderDescription d = ProfilerRecorderHandle.GetDescription(h);
-                if (d.Name.StartsWith("Kit.Grass"))
-                    Debug.Log("marker " + d.Name + " category=" + d.Category.Name + " unit=" + d.UnitType);
-            }
-
-            ProfilerCategory[] categories = { ProfilerCategory.Scripts, ProfilerCategory.Render, ProfilerCategory.Internal };
-            var recorders = new List<ProfilerRecorder>();
-            foreach (ProfilerCategory c in categories)
-                recorders.Add(ProfilerRecorder.StartNew(c, Marker, 400));
-
-            for (int i = 0; i < 200; i++)
-                yield return null;
-
-            for (int i = 0; i < categories.Length; i++)
-            {
-                ProfilerRecorder rec = recorders[i];
-                double sum = 0;
-                int nonZero = 0;
-                for (int s = 0; s < rec.Count; s++)
-                {
-                    double v = rec.GetSample(s).Value;
-                    sum += v;
-                    if (v > 0)
-                        nonZero++;
-                }
-                Debug.Log("recorder " + categories[i].Name + " valid=" + rec.Valid + " count=" + rec.Count
-                    + " nonZero=" + nonZero + " meanMs=" + (rec.Count > 0 ? sum / rec.Count * 1e-6 : 0));
-                rec.Dispose();
-            }
         }
 
         IEnumerator LoadScene()

@@ -30,7 +30,8 @@ namespace Kit.Grass
             if (settings.bladeCount < 0 || settings.bladeCount > GrassCuller.MaxBlades
                 || !(settings.patchSize.x > 0f) || !(settings.patchSize.y > 0f)
                 || !(settings.minScale > 0f) || !(settings.minScale <= settings.maxScale)
-                || settings.mesh.subMeshCount < 1 || settings.mesh.GetIndexCount(0) == 0)
+                || settings.mesh.subMeshCount < 1 || settings.mesh.GetIndexCount(0) == 0
+                || !(settings.mesh.bounds.extents.magnitude > 0f))
                 return GrassSetupResult.BadSettings;
 
             var passInfo = new GrassPassCreateInfo
@@ -73,17 +74,26 @@ namespace Kit.Grass
             };
             culler = GrassCuller.Create(in cullerInfo);
 
-            var fieldInfo = new GrassFieldCreateInfo
+            try
             {
-                seed = settings.seed,
-                bladeCount = settings.bladeCount,
-                patchSize = settings.patchSize,
-                patchCenter = settings.patchCenter,
-                minScale = settings.minScale,
-                maxScale = settings.maxScale,
-            };
-            GrassField field = GrassField.Create(in fieldInfo);
-            culler.Upload(field.Matrices, field.BladeCount);
+                var fieldInfo = new GrassFieldCreateInfo
+                {
+                    seed = settings.seed,
+                    bladeCount = settings.bladeCount,
+                    patchSize = settings.patchSize,
+                    patchCenter = settings.patchCenter,
+                    minScale = settings.minScale,
+                    maxScale = settings.maxScale,
+                };
+                GrassField field = GrassField.Create(in fieldInfo);
+                culler.Upload(field.Matrices, field.BladeCount);
+            }
+            catch
+            {
+                culler.Dispose();
+                culler = null;
+                throw;
+            }
             Pass.Culler = culler; // the field goes out of scope here, so its array is not kept alive
         }
 

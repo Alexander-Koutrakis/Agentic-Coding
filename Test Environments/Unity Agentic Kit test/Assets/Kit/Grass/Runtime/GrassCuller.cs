@@ -37,10 +37,21 @@ namespace Kit.Grass
             BladeCount = info.bladeCount;
 
             int slots = Mathf.Max(1, info.bladeCount); // a GraphicsBuffer needs at least one element
-            Blades = new GraphicsBuffer(GraphicsBuffer.Target.Structured, slots, 64);
-            Visible = new GraphicsBuffer(GraphicsBuffer.Target.Append, slots, sizeof(uint));
-            Args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 5, sizeof(uint));
-            Args.SetData(new uint[] { info.indexCount, 0, 0, 0, 0 });
+            try
+            {
+                Blades = new GraphicsBuffer(GraphicsBuffer.Target.Structured, slots, 64);
+                Visible = new GraphicsBuffer(GraphicsBuffer.Target.Append, slots, sizeof(uint));
+                Args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 5, sizeof(uint));
+                Args.SetData(new uint[] { info.indexCount, 0, 0, 0, 0 });
+            }
+            catch
+            {
+                // Construction failed halfway: release what exists, then let the caller see the error.
+                Blades?.Dispose();
+                Visible?.Dispose();
+                Args?.Dispose();
+                throw;
+            }
         }
 
         public static GrassCuller Create(in GrassCullerCreateInfo info)

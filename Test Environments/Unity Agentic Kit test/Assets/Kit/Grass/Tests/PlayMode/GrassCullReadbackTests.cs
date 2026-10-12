@@ -28,7 +28,6 @@ namespace Kit.Grass.Tests
         Material material;
         Mesh mesh;
         ComputeShader cullShader;
-        string meshSource;
 
         [SetUp]
         public void SetUp()
@@ -91,14 +90,7 @@ namespace Kit.Grass.Tests
             cullShader = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Kit/Grass/Shaders/GrassCull.compute");
             mesh = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/GrassBlade.fbx");
 #endif
-            meshSource = "GrassBlade.fbx";
-            if (mesh == null)
-            {
-                GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                mesh = quad.GetComponent<MeshFilter>().sharedMesh;
-                UnityEngine.Object.DestroyImmediate(quad);
-                meshSource = "primitive quad";
-            }
+            Assert.IsNotNull(mesh, "Assets/GrassBlade.fbx not loaded");
             Assert.IsNotNull(cullShader, "GrassCull.compute not loaded");
         }
 
@@ -119,7 +111,7 @@ namespace Kit.Grass.Tests
         public void WholePatchInView_ReadsAllBlades()
         {
             int visible = Visible(WholePose, Down);
-            TestContext.Out.WriteLine($"readback whole-patch pose: {visible} of {N} (mesh: {meshSource})");
+            TestContext.Out.WriteLine($"readback whole-patch pose: {visible} of {N} (mesh: GrassBlade.fbx)");
             Assert.AreEqual(N, visible);
         }
 
@@ -188,7 +180,7 @@ namespace Kit.Grass.Tests
         }
 
         [Test]
-        public void CreateAndDisposeCullerTwice_NoConsoleMessage()
+        public void CreateAndDisposeCullerTwice_LogsNothingAndDoesNotThrow()
         {
             var info = new GrassCullerCreateInfo
             {

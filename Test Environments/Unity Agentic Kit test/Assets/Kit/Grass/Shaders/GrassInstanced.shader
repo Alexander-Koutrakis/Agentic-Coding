@@ -48,6 +48,8 @@ Shader "Kit/GrassInstanced"
                 float3 positionWS = mul(m, float4(input.positionOS, 1.0)).xyz;
                 half3 normalWS = normalize((half3)mul((float3x3)m, input.normalOS));
 
+                // Known limit: the back face uses the unflipped normal for ambient (SampleSH), and abs(N.L)
+                // lights both sides alike. Acceptable while lighting tuning is out of scope.
                 Light light = GetMainLight();
                 half3 lit = light.color * abs(dot(normalWS, light.direction)) + SampleSH(normalWS);
 
