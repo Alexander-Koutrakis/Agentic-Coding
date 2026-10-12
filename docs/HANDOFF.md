@@ -12,16 +12,16 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Next step
 1. **Trial 001** (`docs/trials/001-rendering-feature.md`): the human and a second agent build a real rendering feature with the kit; record friction; turn repeats into structure. Fill the task card (feature, sweep points, budget, reference scene) with the agent first.
-2. Housekeeping still open: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); review the Editor-made settings changes (list in the 2026-10-12 Spike 002 entry; still uncommitted in the working tree) and decide commit or revert; push `main` when you want it on `origin` (4 commits ahead); the spike branches `spike/002-profiler-harness` and `spike/003-sweep-harness` can be deleted (their commits are in `main`).
+2. Housekeeping still open: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); find out what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found; may relate to the `manage_editor play` stall); push `main` when you want it on `origin` (6 commits ahead).
 3. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time (`ProfilingSampler`); baselines (`Perf/<feature>/baseline.json`).
 4. Kit repo skeleton (§4 layout: `scripts/`, `templates/`, `logs/`), root AGENTS.md, skill template, skill linter.
 5. Later: player-build numbers, visual gate (screenshot diff), shader gate.
 
 ## Session log
-### 2026-10-12 (end) — spike branches merged into main
+### 2026-10-12 (end) — spike branches merged into main, cleaned up
+- Then: spike branches `spike/002-...` and `spike/003-...` deleted (`git branch -d`, merged). The Editor-made settings were committed (`781ed5d`): `Mobile_RPAsset.asset` (URP upgrade 12 to 13), `EditorSettings.asset` (`m_EnterPlayModeOptions` 0 to 1, origin unknown), new `SceneTemplateSettings.json`. `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset` had line-ending-only changes and add nothing. Working tree clean; `main` is 6 commits ahead of `origin/main`, not pushed.
 - `main` fast-forwarded from `70a0071` to `26d3ca3` (history was linear: 002 on top of main, 003 on top of 002), so Spikes 002 and 003 are in `main`: Spike 002 harness, plan §4.4 + D14-D16, `Kit.Perf`, `perf_analyze.py`, skill `unity-perf-harness`, `justfile`, Trial 001 protocol. Done as a local ref update (`git fetch . spike/003-sweep-harness:main`) so the Editor's working files were not swapped. Nothing pushed: `main` is 4 commits ahead of `origin/main`.
 - `just check` (new): runs the 15 Python tests, exit 0; Unity is still gated by `unity-check` through UnityMCP.
-- Not merged and still in the working tree, uncommitted: Editor-made changes to `Mobile_RPAsset.asset`, `EditorSettings.asset`, `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset`, new `SceneTemplateSettings.json`.
 - Next: Trial 001 on a branch `trial/001-<feature>` from `main`.
 
 ### 2026-10-12 (later) — Spike 003: sweep harness + analyzer + perf skill
