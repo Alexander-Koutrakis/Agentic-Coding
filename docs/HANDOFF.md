@@ -4,7 +4,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. `main` (local) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
+- Phase: **1 — Verification (Unity)**. `main` (local, now including Trial 001) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules (KIT001-004), analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling. Frozen (D20).
 - Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
@@ -23,6 +23,11 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-12 (merge of Trial 001) — `trial/001-grass` merged into local `main`
+- Merged by the human's request with `git merge --no-ff` (`edfac24`). Not pushed: `main` is ahead of `origin/main`. Branch `trial/001-grass` kept, not deleted.
+- unity-check on merged `main`: `PASS 18/18 EditMode + 7/7 PlayMode (Kit.Grass.Tests.GrassCullReadbackTests 6 + GrassPerfSweepTests.Smoke_OnePoint), format/assets/code-rules ok (assets 85/85 .meta), scope: no card, 0 errors, 0 warnings`; editor state `ready_for_tools` true after the compile. The full `Sweep_Grass` was not re-run on `main`. Tree is identical to the branch tip (`git diff` empty).
+- Three `ProjectSettings/*.asset` files still show line-ending-only changes from Unity, uncommitted.
 
 ### 2026-10-12 (Trial 001: grass, full pipeline) — branch `trial/001-grass`
 - Ran Architect, Director (two plan revisions), 2 plan reviewers x2 rounds, 6 coders + 2 fix coders, perf harness runner and code reviewer, each as a fresh subagent. Ledger with tokens and times: `docs/trials/001-rendering-feature.md`. Subagent tokens about 1.28M in total (main session not countable).
