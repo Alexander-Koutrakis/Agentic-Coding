@@ -32,6 +32,9 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D11 | 2026-10-10 | Unity gates are **skills over UnityMCP calls** (`unity-wait-ready`, `unity-check`), not Python scripts. | The stdio bridge closes other clients when a new one connects, so a script would cut Claude Code's link. Revisit with HTTP transport if script gates become necessary. |
 | D12 | 2026-10-10 | Spike 001 merged into `main`. `Assets/Kit/Spike` stays in the test project as the **canary** fixture: the known-good reference for `unity-check` (3 EditMode tests). | The gate needs a fixture that must always pass. |
 | D13 | 2026-10-10 | Until we package the kit (plugin vs `.claude/skills`, open question), `CLAUDE.md` points to skills by path, so they are followed every time instead of relying on auto-discovery. | Deterministic for now; packaging decided later. |
+| D14 | 2026-10-12 | **Perf harness guideline** (plan §4.4): each rendering feature gets a harness designed with the human; the guideline gives the defaults: 100 warmup + 300 measured frames, median and p95 in ms for main thread, render thread and GPU, a sweep over instance count, and a linear fit giving ms per 1000 instances. Every run writes a log. | The cost of a feature is its slope, not one number. The human chooses the sweep per feature; the kit supplies the machinery. |
+| D15 | 2026-10-12 | **Editor GPU numbers are relative-only** (Editor Profiler GPU module). Good enough to compare ON vs OFF and slopes on one machine; real numbers need a development player build (later). | Spike 002: Editor numbers are noisy (marker p50 spread ~15%) and frame-capped unless vsync is off. |
+| D16 | 2026-10-12 | **Harness split:** a C# runner (Play Mode test) only collects raw per-frame samples and writes files; a **Python script** reads them and does medians, p95, regression and the budget check. | Python reading files never touches the bridge, so D11 allows it. The math is testable without Unity. |
 | D10 | 2026-10-10 | Test project: `Test Enviroments/Unity Agentic Kit test` — Unity **6000.3.10f1**, **URP 17.3**, Test Framework 1.6.0. Root `.gitignore` always ignores `Library/`; each Unity project has its own anchored `.gitignore`. | Reproducible sandbox for the kit. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
@@ -76,22 +79,42 @@ Model: **one project checkout, one open Editor, one task at a time.**
 - Gate: configure/build (CMake presets) → unit tests → sanitizers → clang-tidy → **validation-layer errors = failure** → golden-image diff.
 - Frame inspection: RenderDoc capture + Python replay → JSON summary the agent can read.
 
-### 4.4 Graphics feature perf harness (D7, proposed)
+### 4.4 Graphics feature perf harness (D7, D14-D16)
 Enforced in three layers, weakest to strongest:
 1. **Rule** (AGENTS.md, one line): "A graphics feature is done only when its perf harness runs and is within budget."
-2. **Skill** `graphics-feature`: the steps include *declare budget → instrument → generate harness from template → record baseline → run → compare*.
+2. **Skill** `graphics-feature`: *agree the sweep with the human -> declare budget -> instrument -> generate harness from template -> record baseline -> run -> analyze -> compare*.
 3. **Gate** `perf_check.py` (part of `check`): fails if a feature folder has no `perf/feature.json`, no result, or the result is over budget / regressed vs baseline.
 
-Per feature, the agent must provide:
-- **Budget** in the task card (e.g. "≤ 0.4 ms GPU @1080p on reference machine, 0 GC alloc/frame").
-- **Instrumentation:** CPU work wrapped in `ProfilerMarker` (Unity) / Tracy zone or CPU timer (native); GPU work in a named profiling scope (Unity `ProfilingSampler`) / timestamp queries around each pass (Vulkan).
-- **Harness:** fixed scene, fixed camera (or scripted path), fixed resolution, warmup frames, N measured frames, **feature ON vs OFF** in the same run.
-  - Unity: a performance test using `com.unity.test-framework.performance` (`[Test, Performance]`), run through the bridge; frame CPU/GPU from `FrameTimingManager` + the feature's markers.
-  - Native: harness executable/mode `--bench <feature> --frames N --warmup W --out result.json`, headless.
-- **Result** in one shared schema (`perf/<feature>/result.json`): feature, scene, resolution, frames, machine id, build config, metrics {cpu_ms, gpu_ms, feature_gpu_ms p50/p95, gc_alloc, draw_calls, memory}, on/off delta.
-- **Baseline** committed once accepted; later runs compare against it.
+**The harness is designed per feature, with the human.** What follows is the guideline and the defaults, not a fixed recipe. Which parameter is swept (instances, resolution, shadow cascades, samples), the budget and the reference scene are decided in the conversation and written into `perf/feature.json`.
 
-Known caveats: Editor numbers are noisy and unrepresentative → use for quick checks only, compare relative (ON vs OFF, vs baseline on same machine); real numbers come from a development player build (later phase). Use medians of several runs and a tolerance (e.g. 5–10%).
+#### Measurement rules (defaults, overridable per feature)
+- **Frames:** discard the first **100** (warmup), record the next **300**, per sweep point. Recorders start after warmup (Spike 002: recorders started earlier did not hold the expected sample count).
+- **Metrics, all in ms** (convert from ns once, when writing the result; fields named `main_ms`, `render_ms`, `gpu_ms`, `feature_ms`): main thread, render thread, GPU frame, and the feature's own marker/pass. Per metric: **median and p95** over the 300 frames. Whole-frame GC bytes are recorded as context.
+- **Unfreeze the frame rate:** `vSyncCount = 0`, `targetFrameRate = -1`, fixed resolution and quality level, so main-thread and GPU time are not capped (Spike 002: main thread sat at ~16.5 ms, the frame cap).
+- **Deterministic scene:** fixed camera or scripted path, fixed random seed, fixed time/wind/animation, same camera at every sweep point.
+- **Feature ON vs OFF** in the same run; the **N = 0 point with the feature on** gives its fixed cost.
+- **Editor numbers are relative only** (D15): compare inside one run or against a baseline from the same machine.
+
+#### Sweep and slope
+- Sweep a quality parameter N over a list chosen with the human, e.g. `[1000, 3000, 6000, 10000, 50000, 100000]` instances. Always include the baseline point (N = 0 or feature off) first and last (drift check). Repeat each point (default 3 runs) in randomized order for an error bar.
+- **Fit each metric separately** (least squares of the per-point median against N). Report **ms per 1000 instances** (slope x 1000), the **intercept** (fixed cost), **R^2**, and the slopes of the lower and upper halves of the sweep.
+- Frame time is about max(CPU, GPU): fitting only frame time hides GPU cost in a CPU-bound scene. Treat the feature's own pass/marker as the primary metric and the thread times as context.
+- If R^2 is low or the half-slopes disagree, the report says "not linear in this range" and gives the points, not one number. Small N may sit below the noise floor (Spike 002: ~15% spread on a 12 ms marker); trust the slope from the large counts over the cost at the small ones.
+
+#### Logs and files (D16)
+Per run, in `perf/<feature>/runs/<timestamp>-<n>/`:
+- `run.json`: config (frames, sweep point, seed), git commit, Unity version, machine id, GPU name, resolution, quality level, Editor or player, and per-metric median/p95 in ms.
+- `frames.csv`: raw per-frame samples in ms, so the analysis can be redone without Unity.
+- One line appended to `perf/<feature>/index.jsonl` (timestamp, N, path, key numbers).
+The **C# runner** (Play Mode test through `run_tests`; do not use `manage_editor play`, Spike 002 friction #2) writes these files and returns one summary line. The **Python script** (`perf_analyze.py`) reads them and writes `perf/<feature>/report.json` with per-point stats, the fits, the budget verdicts, and a short text summary. Each result is baselined once accepted; later runs compare against it, with 10-15% tolerance in the Editor (Spike 002 spread), tighter with a player build.
+
+#### Budgets
+Declared in the task card and `feature.json`: a per-1000-instances cost, a total at the real in-game count, and optional GC limits (whole-frame GC has a ~21 KB Editor floor; per-marker GC needs a different measure or a player build).
+
+#### Open
+- GPU and render-thread timing API in the Editor: unverified (Spike 003 probes it).
+- GPU cost per pass: `ProfilingSampler`/`ScriptableRenderPass` scope vs frame GPU time.
+- Player-build numbers (later phase).
 
 ### 4.5 Unity gate ladder (proposed, 2026-10-10)
 `unity-check` becomes a list of gates, run cheapest first, stop at the first FAIL. Gates that only read files on disk (format, metas, scope, banned APIs) may be plain Python scripts: D11 only forbids scripts that talk to the bridge.
@@ -106,7 +129,7 @@ Known caveats: Editor numbers are noisy and unrepresentative → use for quick c
 | | **Scope** | script on `git diff`: only files the task card allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval | to build |
 | | **Tests** | EditMode (built) + PlayMode; new code has new tests | partly built |
 | Graphics feature | **Shader** | shader compile errors/warnings via console/MCP | to build |
-| | **Perf** | harness exists, runs in Play Mode, within budget, 0 GC alloc in hot path (D7 / §4.4) | next spike |
+| | **Perf** | harness exists, runs in Play Mode, sweep slope and totals within budget (D7, D14-D16 / §4.4) | Spike 003 |
 | | **Visual** | fixed-camera screenshot vs reference image with tolerance | later |
 | Before merge | **Player build** | development build compiles (catches Editor-only code in runtime) + full test suite | later |
 
