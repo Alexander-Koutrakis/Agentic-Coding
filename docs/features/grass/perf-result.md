@@ -42,3 +42,22 @@ Sessions `20261012T174232` (ground sweep, 23 runs), `...174255` (whole-patch com
 - feature_ms (CPU recording) stays 0.016 to 0.022 ms at every N; the CPU side does not grow with blade count. main_ms jumps from 0.89 ms (640k) to 1.58 ms (1M) with an unexplained rise, not examined (at 1M the whole-pose main_ms is 3.2 ms).
 - GC 18,417 B per frame at every N (Editor floor). N=0 drift under 5%.
 - Open: no total budget for 1M blades has been given (not invented). Buffers at 1M: 64.8 MiB on the GPU plus a 64 MB transient CPU array when placing. Whole-pose runs are single runs. Not verified: player build, per-pass GPU time.
+
+## Repeatability check: 5 runs per blade amount (commit 42fd6f9)
+
+Session `20261012T174704`, 37 sweep runs (7 points x 5 + 2 at N=0), ground pose, same machine and conditions as above. `Sweep_Grass` 47.6 s, `perf_analyze` exit 0. Fit gpu_ms: 0.0022 ms per 1000, intercept 0.489 ms, R^2 1.000, linear; budget per_1000 PASS.
+
+| N | 5 run medians gpu_ms | spread (max-min)/median |
+|---|---|---|
+| 0 (2 runs) | 0.4813, 0.4710 | 2.2% drift |
+| 20000 | 0.5253, 0.5263, 0.5263, 0.5263, 0.5263 | 0.2% |
+| 40000 | 0.5755, 0.5755, 0.5745, 0.5734, 0.5755 | 0.4% |
+| 80000 | 0.6666, 0.7491, 0.6697, 0.6687, 0.6717 | 12.3% (one outlier, 0.7491) |
+| 160000 | 0.8499, 0.8479, 0.8479, 0.8489, 0.8509 | 0.4% |
+| 320000 | 1.2093, 1.193, 1.1955, 1.1981, 1.2037 | 1.4% |
+| 640000 | 1.8908, 1.8964, 1.8985, 1.9016, 1.8985 | 0.6% |
+| 1000000 | 2.6839, 2.7034, 2.7003, 2.6993, 2.6993 | 0.7% |
+
+- At 20,000 blades the five runs agree within 0.2% (0.5253 to 0.5263 ms). No run-order trend (first runs are not slower).
+- Old 3-repeat session vs this one, gpu_ms median per N: within -0.8% to +0.5% at every N.
+- Not explained: the 80,000 outlier (one run, 0.7491 ms; the median ignores it) and the 11% main_ms spread at 320,000. main_ms is context only for this GPU-bound feature.
