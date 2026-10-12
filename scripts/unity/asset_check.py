@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from changed_files import changed_files, index_files, repo_root
-from gate_common import exit_with, finish, parser, resolve_project
+from gate_common import exit_with, finish, parser, resolve_base, resolve_project
 
 GATE = "assets"
 GUID = re.compile(r"^guid:\s*([0-9a-fA-F]{32})\s*$", re.M)
@@ -114,6 +114,7 @@ def check_git(repo: Path, project: str, base: str) -> tuple[list[str], int]:
 def main(argv: list[str] | None = None) -> int:
     args = parser(__doc__.splitlines()[0]).parse_args(argv)
     repo = repo_root(args.repo)
+    args.base = resolve_base(repo, args.base)
     project = resolve_project(repo, args.project)
     disk, n_assets, n_metas = check_disk(repo, project)
     staged, n_changed = check_git(repo, project, args.base)

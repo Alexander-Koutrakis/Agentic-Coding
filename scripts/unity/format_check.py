@@ -13,7 +13,7 @@ import subprocess
 from pathlib import Path
 
 from changed_files import changed_files, repo_root
-from gate_common import GateError, exit_with, finish, parser, resolve_project
+from gate_common import GateError, exit_with, finish, parser, resolve_base, resolve_project
 
 GATE = "format"
 CHUNK = 50  # files per dotnet call, keeps the command line short
@@ -42,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dotnet", default=None, help="dotnet executable (default: dotnet on PATH)")
     args = p.parse_args(argv)
     repo = repo_root(args.repo)
+    args.base = resolve_base(repo, args.base)
     project = resolve_project(repo, args.project)
     assets = repo / project / "Assets"
     prefix = f"{project}/Assets/"

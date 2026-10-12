@@ -18,18 +18,18 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 - Never run batch-mode tests while the Editor has the project open.
 
 ## Steps
-0. **File gates**, cheapest first. Run each from the repo root and stop at the first one that does not exit 0. Do not refresh or compile after a failure:
+0. **File gates**, one command. Run from the repo root, with the card for the task:
    ```
-   uv run --no-project python scripts/unity/format_check.py --project "<project>"
-   uv run --no-project python scripts/unity/asset_check.py --project "<project>"
-   uv run --no-project python scripts/unity/scope_check.py --project "<project>" --card docs/tasks/<card>.md
-   uv run --no-project python scripts/unity/code_rules.py --project "<project>"
+   uv run --no-project python scripts/unity/file_gates.py begin --project "<project>" --card docs/tasks/<card>.md
+   uv run --no-project python scripts/unity/file_gates.py run --project "<project>"
    ```
-   No task card (for example a check on `main`): skip the scope command and write `scope: no card` in the result line.
-   Each prints one `PASS`/`FAIL <gate>: ...` line and up to 10 details. The full report is in `.agent/logs/<gate>.txt`. `--base` defaults to `main`.
-   - Exit 1: the gate's `FAIL <gate>: ...` line **is** the result line; paste it and its details.
-   - Exit 2 (`ERROR <gate>: ...`, a bad path, missing tool or unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
-   - All exit 0: carry the summaries into the final PASS line as `format <N> files, assets ok, scope ok, code-rules ok`.
+   - `begin` runs **once, when the task starts** (before your first edit; the lead's brief says so). It records HEAD as the task's base and the card. Every gate then compares against that same base, so earlier committed work (brief, plan, other cards) is never flagged (T1-8, T1-12). Without `begin` the base is `main`. The next task needs its own `begin`.
+   - `run` runs format, assets, scope, code-rules in that order and stops at the first one that does not pass. It prints that gate's `FAIL <gate>: ...` line and up to 10 details (full report in `.agent/logs/<gate>.txt`). Do not refresh or compile after a failure.
+   - Exit 1: that `FAIL <gate>: ...` line **is** the result line; paste it and its details.
+   - Exit 2 (`ERROR ...`, a bad path, missing tool, unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
+   - Exit 0: it prints `PASS file-gates: ... base <sha>` and saves it. Do not retype it: step 8 composes the final line from it.
+   - No task card (for example a check on `main`): run `run` without `begin`. The line says `scope: no card`.
+   - Single gates still work on their own (`scripts/unity/format_check.py`, `asset_check.py`, `scope_check.py`, `code_rules.py`; same `--project`, optional `--base`), for example to re-check one gate while fixing it.
    - **format:** changed `.cs` files under `Assets/` vs the project's `.editorconfig`. Fix the file; never reformat files the task did not touch.
    - **assets:** `.meta` pairs, orphans, GUIDs on disk; `.meta` staged/committed together with its asset. Never write a `.meta` by hand: fix it through the Editor (refresh) or ask.
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.
@@ -42,17 +42,22 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 5. **Wait for results.** `get_test_job` with `wait_timeout=30`. Repeat until `status` is `succeeded` or `failed`. One call is normally enough. Stop after about 5 minutes and report a timeout as FAIL.
 6. **Collect failures.** On `failed`, read `progress.failures_so_far[]` (`full_name`, `message`). The message holds expected vs actual.
 7. **Console again.** Read errors once more. Errors that appeared during the run are FAIL.
+8. **Compose the PASS line.** Do not type it. Run:
+   ```
+   uv run --no-project python scripts/unity/file_gates.py finish --project "<project>" --editor "18/18 EditMode (Kit.Spike.Tests.EditMode)" --errors 0 --warnings 0 --analyzer-warnings 0
+   ```
+   `--editor` is the real `passed/total`, mode and assemblies from the test job. `finish` prints the PASS line only if the file gates ran on exactly the files now in the tree (otherwise `FAIL stale`: edit happened after `run`, run it again), tests passed equal total and total is above 0, and errors are 0. Paste its output as the result line.
 
 ## How to validate
-- All file gates exit 0 **and** zero console errors **and** the job `status` is `succeeded` **and** `completed == total`.
-- If `total` is 0, that is FAIL: the assembly name is wrong or the tests did not compile.
+- `file_gates.py finish` printed a `PASS` line (file gates current, zero console errors, job `status` is `succeeded`, `completed == total`, total above 0).
+- If `total` is 0, that is FAIL: the assembly name is wrong or the tests did not compile (`finish` rejects it).
 - Known-good reference (Spike 001): `Kit.Spike.Tests.EditMode` = 3 tests, all pass; a broken assertion shows as `Expected: 6.0d +/- 9.99e-06d But was: 5.0d`.
 - The scripts have their own tests: `uv run --no-project --with pytest pytest scripts/unity/tests -q`.
 
 ## What to return
 One line, then evidence:
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope ok, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok, scope: no card, code-rules ok, analyzers on (0 warnings), 0 errors, 0 warnings, 11s`
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format ok (0 files), assets ok (55 assets, 55 .meta, 0 changed in git), scope ok (4 changed files in scope, tests may-not-change), code-rules ok (0 files, 0 new violations, 0 suppressed), analyzer warnings 0, 0 errors, 0 warnings` (printed by `file_gates.py finish`)
+- Same with `scope: no card` in place of the scope part when there is no card.
 - `FAIL format: Test Environments/Unity Agentic Kit test/Assets/Kit/Spike/Runtime/SpikeMath.cs(9,32): error WHITESPACE: Fix whitespace formatting. ...`
 - `FAIL assets: staged without its .meta: Test Environments/Unity Agentic Kit test/Assets/Kit/New.cs`
 - `FAIL scope: outside card scope: scripts/other.py`

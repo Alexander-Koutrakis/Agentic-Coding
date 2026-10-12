@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Callable
 
 MAX_DETAILS = 10
+BASE_FILE = ".agent/task-base"  # two lines: card, rev; written by file_gates.py begin; one task at a time (D5)
+DEFAULT_BASE = "main"
 
 
 class GateError(Exception):
@@ -20,8 +22,33 @@ def parser(description: str) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=description)
     p.add_argument("--repo", default=".", help="path inside the git repo (default: current folder)")
     p.add_argument("--project", required=True, help="Unity project folder, relative to the repo root")
-    p.add_argument("--base", default="main", help="branch the change is compared against (default: main)")
+    p.add_argument("--base", default=None,
+                   help=f"revision the change is compared against (default: the rev recorded by "
+                        f"file_gates.py begin in {BASE_FILE}, else {DEFAULT_BASE})")
     return p
+
+
+def read_task_base(repo: Path) -> tuple[str, str] | None:
+    """(card, rev) recorded by `file_gates.py begin`, or None."""
+    f = repo / BASE_FILE
+    if not f.is_file():
+        return None
+    lines = f.read_text(encoding="utf-8").splitlines()
+    return (lines[0], lines[1]) if len(lines) >= 2 and lines[0] and lines[1] else None
+
+
+def write_task_base(repo: Path, card: str, rev: str) -> None:
+    f = repo / BASE_FILE
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(f"{card}\n{rev}\n", encoding="utf-8")
+
+
+def resolve_base(repo: Path, explicit: str | None) -> str:
+    """One base for every gate: --base, else the recorded task base, else main."""
+    if explicit:
+        return explicit
+    recorded = read_task_base(repo)
+    return recorded[1] if recorded else DEFAULT_BASE
 
 
 def resolve_project(repo: Path, project: str) -> str:
