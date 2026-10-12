@@ -14,7 +14,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
 
 ## Next step
-1. **Check the merge**: run `just check` and `unity-check` on `main` (the merge combined two machines' work and was not run in Unity yet). Then push `main` when you want it on `origin` (agents never push).
+1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
 2. **Trial 001**: run one medium feature through the pipeline (templates, one plan reviewer, coders, gate, perf harness) and record tokens and time per stage; fill the task card (feature, sweep points, budget, reference scene) with the agent first. Trim this HANDOFF log (move old entries to `docs/archive/`).
 3. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
 4. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
@@ -22,6 +22,12 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 6. Later: player-build numbers, visual gate (screenshot diff), shader gate.
 
 ## Session log
+### 2026-10-12 (unity-check on merged main) — PASS
+- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok (55 assets, 55 .meta), scope: no card, code-rules ok (0 new violations), analyzers on, 0 errors, 0 warnings`, on `main` at `c2718c1`. Compile 0.5 s, reload 5.4 s.
+- Extra, not part of the gate: PlayMode 3/3 in 36.6 s (perf canary, includes `SpikeWorkloadPerfTests.Marker_OnVsOff_IsReadableByName`). `just check`: 15 tests OK; pytest over `scripts/`: 227 passed.
+- Not run: the full `Kit.Perf` sweep (needs sweep points and budget agreed first).
+- Open: `just check` runs only the 15 `scripts/unity` unittest tests, not the pytest suites in `scripts/core` and `scripts/unity/tests`; consider making it run pytest over `scripts/`.
+
 ### 2026-10-12 (merge) — reconciled two machines
 - Alexandros developed on two machines without pulling: `origin/main` (Spikes 002/003, perf harness, 7 commits, still under the old path `Test Enviroments`) and local `main` (Tasks 002/003, rename to `Test Environments`, pipeline redesign, 20 commits). Merged `origin/main` into local `main`; harness files moved to `Test Environments/`.
 - Decision numbering collided (both used D14-D17). Kept the pipeline numbers (D14-D20, dated 2026-10-11) and renumbered the perf-harness decisions to **D21-D24**; references updated in the plan, spike 003, `perf_analyze.py`, the perf skill and `PerfTypes.cs`. Entries below that say D14-D17 for the harness mean D21-D24.
