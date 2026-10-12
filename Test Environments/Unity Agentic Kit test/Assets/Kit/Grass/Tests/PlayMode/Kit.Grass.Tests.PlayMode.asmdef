@@ -3,6 +3,7 @@
     "rootNamespace": "Kit.Grass.Tests",
     "references": [
         "Kit.Grass",
+        "Kit.Perf",
         "Unity.RenderPipelines.Universal.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

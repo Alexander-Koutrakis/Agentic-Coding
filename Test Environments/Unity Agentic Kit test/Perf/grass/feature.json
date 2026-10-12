@@ -1,0 +1,12 @@
+{
+  "feature": "grass",
+  "sweep_param": "blades",
+  "points": [1000, 3000, 6000, 10000, 50000, 100000],
+  "fit_min_n": 10000,
+  "primary_metric": "gpu_ms",
+  "notes": "Reference scene GrassReference, whole-patch camera pose, 1920x1080 Game view. gpu_ms is the primary metric; feature_ms is reported only if the marker can be recorded.",
+  "budgets": [
+    { "metric": "gpu_ms", "kind": "per_1000", "max": 0.05 },
+    { "metric": "gpu_ms", "kind": "total_at", "n": 100000, "max": 3.0 }
+  ]
+}
