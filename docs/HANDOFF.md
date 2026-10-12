@@ -4,7 +4,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
+- Phase: **1 — Verification (Unity)**. Spike 002 done: Play Mode perf harness works on a CPU marker. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
 - Repo contains: docs, CLAUDE.md, gate skills, Unity test project with the canary fixture `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green).
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
 - Open (plan §6): the questions still unchecked.
@@ -13,11 +13,19 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
 2. ~~Merge spike branch~~ (D12) · ~~CLAUDE.md rules~~ (gate, console, re-read, profiler, bridge port).
 3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — check whether an IDE with format-on-save was open).
-4. Next spike: profiler/perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
+4. ~~Spike 002~~ done (`docs/spikes/002-profiler-harness.md`). Still open: friction #3 experiment; review the Editor-made settings changes (see log) and decide commit or revert; decide where `Perf/` results and baselines live.
 5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
-6. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
+6. Build `graphics-feature` skill (inputs from Spike 002 proposals 1-7) + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
 
 ## Session log
+### 2026-10-12 — Spike 002 run (Play Mode profiler harness) + housekeeping
+- Branch `spike/002-profiler-harness`. Harness under `Assets/Kit/Spike/Perf/` (workload + `ProfilerMarker`, PlayMode test with `ProfilerRecorder`, OFF vs ON, p50/p95, `Perf/spike-002/result.json`). Results, friction and proposals in `docs/spikes/002-profiler-harness.md`.
+- Gate: PlayMode 1/1, EditMode canary 3/3, 0 console errors, 0 warnings. Code compiled without edits; the one failure (sample count 30 vs 120) was my buffer assumption, fixed by starting the recorders after warmup.
+- Findings: the custom marker is readable by name (in a test and through `get_counters`); `ProfilerRecorder` works with the Profiler off; Editor noise on the marker p50 is about 15% min to max over 5 runs; main-thread time is frame-capped and not a cost metric; whole-frame GC has a 21 KB Editor floor; `manage_editor play` stalls while the Editor is unfocused, use `run_tests`.
+- Housekeeping: unity-mcp pinned to `#v10.3.0` (same commit as before, canary passes). Friction #3 (file rewrite) NOT investigated.
+- Not done: GPU time, player-build numbers, a render feature. `Perf/` results are not committed (decision pending).
+- Left uncommitted on purpose: Editor-made changes (`Mobile_RPAsset.asset` URP upgrade, `EditorSettings.asset` EnterPlayModeOptions 0 to 1, `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset`, `SceneTemplateSettings.json`). Review them with the human.
+
 ### 2026-10-10 — review of Spike 001 (Cowork)
 - Reviewed spike results and both gate skills: accepted. Decisions D11 (gates are skills over MCP), D12 (merge; Spike code stays as canary), D13 (CLAUDE.md references skills by path).
 - CLAUDE.md: added gate section and rules from proposals 3–5 and friction #11 (no direct bridge connection).
