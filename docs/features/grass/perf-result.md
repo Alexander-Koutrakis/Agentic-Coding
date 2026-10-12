@@ -61,3 +61,6 @@ Session `20261012T174704`, 37 sweep runs (7 points x 5 + 2 at N=0), ground pose,
 - At 20,000 blades the five runs agree within 0.2% (0.5253 to 0.5263 ms). No run-order trend (first runs are not slower).
 - Old 3-repeat session vs this one, gpu_ms median per N: within -0.8% to +0.5% at every N.
 - Not explained: the 80,000 outlier (one run, 0.7491 ms; the median ignores it) and the 11% main_ms spread at 320,000. main_ms is context only for this GPU-bound feature.
+
+## Baseline
+Accepted by Alexandros in chat on 2026-10-12: session `20261012T174704` (5 repeats per point, ground pose, commit 42fd6f9) is the baseline for `grass`, stored in `Perf/grass/baseline.json`. No script compares against it yet; the plan's baseline comparison is still open.
