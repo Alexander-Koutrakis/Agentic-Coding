@@ -5,12 +5,13 @@ Exit codes: 0 PASS, 1 FAIL, 2 usage or environment error.
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 from typing import Callable
 
 MAX_DETAILS = 10
-BASE_FILE = ".agent/task-base"  # two lines: card, rev; written by file_gates.py begin; one task at a time (D5)
+BASE_FILE = ".agent/task-base"  # three lines: card, rev, branch; written by file_gates.py begin; one task at a time (D5)
 DEFAULT_BASE = "main"
 
 
@@ -28,23 +29,40 @@ def parser(description: str) -> argparse.ArgumentParser:
     return p
 
 
+def current_branch(repo: Path) -> str:
+    try:
+        proc = subprocess.run(["git", "-C", str(repo), "rev-parse", "--abbrev-ref", "HEAD"],
+                              capture_output=True, text=True, encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        raise GateError("git not found on PATH") from None
+    return proc.stdout.strip() if proc.returncode == 0 else ""
+
+
 def read_task_base(repo: Path) -> tuple[str, str] | None:
-    """(card, rev) recorded by `file_gates.py begin`, or None."""
+    """(card, rev) recorded by `file_gates.py begin`, or None.
+
+    A record made on another branch is ignored: after the task branch is merged and you are back on main,
+    the old base and card must not leak into the next check.
+    """
     f = repo / BASE_FILE
     if not f.is_file():
         return None
     lines = f.read_text(encoding="utf-8").splitlines()
-    return (lines[0], lines[1]) if len(lines) >= 2 and lines[0] and lines[1] else None
+    if len(lines) < 2 or not lines[0] or not lines[1]:
+        return None
+    if len(lines) >= 3 and lines[2] != current_branch(repo):
+        return None
+    return lines[0], lines[1]
 
 
 def write_task_base(repo: Path, card: str, rev: str) -> None:
     f = repo / BASE_FILE
     f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(f"{card}\n{rev}\n", encoding="utf-8")
+    f.write_text(f"{card}\n{rev}\n{current_branch(repo)}\n", encoding="utf-8")
 
 
 def resolve_base(repo: Path, explicit: str | None) -> str:
-    """One base for every gate: --base, else the recorded task base, else main."""
+    """One base for every gate: --base, else the task base recorded on this branch, else main."""
     if explicit:
         return explicit
     recorded = read_task_base(repo)

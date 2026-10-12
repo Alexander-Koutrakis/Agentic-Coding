@@ -6,7 +6,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ## Current state
 - Phase: **1 — Verification (Unity)**. `main` (local, now including Trial 001) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate plumbing (D28, task 013, merged into `main` 2026-10-12 with `--no-ff`, `e73ff33`; not pushed): `scripts/unity/file_gates.py` (`begin`, `run`, `finish`) runs the file gates against one recorded base and composes the PASS line; `unity-wait-ready` has a fallback without a resource reader.
+- Gate plumbing (D28, task 013, merged into `main` 2026-10-12 with `--no-ff`, `e73ff33`; not pushed; follow-up task 014 below): `scripts/unity/file_gates.py` (`begin`, `run`, `finish`) runs the file gates against one recorded base and composes the PASS line; `unity-wait-ready` has a fallback without a resource reader.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules (KIT001-004), analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling. Frozen (D20).
 - Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
 - Feature pipeline (plan §4.6, D15-D20): role skills, style guides v1, templates, `scripts/core/docs_check.py`. **Run end to end once: Trial 001 (grass), branch `trial/001-grass`, not merged, not pushed** (see the top log entry and `docs/trials/001-rendering-feature.md`).
@@ -24,6 +24,10 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-12 (task 014: stale task base) — branch `task/014-task-base-stale`
+- unity-check on merged `main` (`9d99075`): `PASS 18/18 EditMode (all assemblies), format ok (0 files), assets ok (85 assets, 85 .meta, 0 changed in git), scope: no card, code-rules ok (0 files, 0 new violations, 0 suppressed), analyzer warnings 0, 0 errors, 0 warnings`. Compile and reload waited with the resource; the MCP link dropped for about a minute after the test run started and came back by itself. PlayMode and `Sweep_Grass` not run.
+- Wart found there: the base recorded for task 013 stayed in `.agent/task-base`, so `run` on `main` would have used card 013. Fix: `begin` now also records the branch; `read_task_base` ignores a record made on another branch (new test; scripts tests 179 passed, `just check` is the full run). `unity-check` skill text updated.
 
 ### 2026-10-12 (task 013: gate plumbing) — branch `task/013-gate-plumbing`
 - At the human's request: shader gate, 1M budget and control run declared out of scope (D27) and removed from plan and handoff. Fixed friction T1-8 to T1-12 (D28).
