@@ -31,6 +31,7 @@ Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, 
 - Escapes: black blades from back-face lighting (found at T5 screenshots, fixed in card 010); code review found 6 majors the plan review missed (leaks on partial failure, shared test fixture, buffers not released on disable, perf test cannot show gain, perf headline understated).
 - Final gates on the branch: `just check` 227 passed; unity-check `PASS 18/18 EditMode + 6/6 PlayMode readback + Smoke_OnePoint, format 16 files, assets ok (85 assets, 85 .meta), scope: no card, code-rules ok, 0 errors, 0 warnings`. The full `Sweep_Grass` was not re-run after the last fix commit.
 - Human decisions during the trial: tier medium, no tint, budget 0.05 ms per 1000 and 3 ms at 100k, patch 50 x 50 m, scene component cut, GPU culling with shaders allowed, sweep run confirmed.
+- Later the same day, at the human's request: sweep raised to 20k doubling to 640k then 1M, from a ground-level camera (card 012, commit 8916ef3). Result: linear 0.0022 ms per 1000 blades placed, 2.686 ms at 1M (500,099 visible, culler keeps ~50%), vs 4.357 ms with the whole patch in view: culling gain now visible (`perf-result.md`). No total budget for 1M has been set (human to give one). Not run again after this: the full unity-check EditMode gate (the final gate above predates card 012; PlayMode 8/8 passed in the coder's run).
 - Three `ProjectSettings/*.asset` files stay modified (line endings only, made by Unity); not committed.
 
 ### 2026-10-12 (unity-check on merged main) — PASS
