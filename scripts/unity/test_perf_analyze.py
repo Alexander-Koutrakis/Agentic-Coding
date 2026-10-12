@@ -2,6 +2,8 @@
 
 Run: python -I -m unittest discover -s scripts/unity -p 'test_*.py'
 """
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -10,6 +12,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import perf_analyze as pa  # noqa: E402
+
+
+def run_main(args):
+    """perf_analyze.main without its stdout summary, so test output stays readable."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return pa.main(args)
 
 
 def write_run(feature_dir, label, n, stamp, gpu_ms, feature_ms=None, tamper=None, commit="abc", session="s1"):
@@ -108,7 +116,7 @@ class Analysis(unittest.TestCase):
         write_run(self.dir, "sweep-n500-i99", 500, "00000099", 0.51, feature_ms=0.25, tamper="gpu_ms")
         report = pa.analyze(self.dir, "sweep-")
         self.assertTrue(any("gpu_ms median differs" in e for e in report["errors"]))
-        self.assertEqual(pa.main([str(self.dir)]), 2)
+        self.assertEqual(run_main([str(self.dir)]), 2)
 
     def test_mixed_commits_is_an_error(self):
         make_sweep(self.dir, lambda n: 0.5 + 0.02 * n / 1000)
@@ -170,11 +178,11 @@ class Analysis(unittest.TestCase):
         report = pa.analyze(self.dir, "sweep-")
         self.assertEqual([b["pass"] for b in report["budgets"]], [True, True])
         self.assertEqual(report["budgets"][1]["source"], "measured")
-        self.assertEqual(pa.main([str(self.dir)]), 0)
+        self.assertEqual(run_main([str(self.dir)]), 0)
 
         budget["budgets"][0]["max"] = 0.01
         (self.dir / "feature.json").write_text(json.dumps(budget), encoding="utf-8")
-        self.assertEqual(pa.main([str(self.dir)]), 1)
+        self.assertEqual(run_main([str(self.dir)]), 1)
 
     def test_total_at_uses_the_fit_when_the_point_was_not_measured(self):
         make_sweep(self.dir, lambda n: 0.5 + 0.02 * n / 1000)

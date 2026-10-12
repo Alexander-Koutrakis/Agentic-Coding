@@ -9,6 +9,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - The Unity Editor is open and reachable through the `UnityMCP` MCP server. The human is not using the Editor while you work.
 
 ## The gate (Unity)
+- `just check` runs the shell-side checks (Python script tests). It does **not** cover Unity: that is `unity-check` below. Report both.
 - IMPORTANT: after any change to scripts or assets, follow `skills/unity/unity-wait-ready/SKILL.md`. Never trust the return value of `refresh_unity`; it returns while still compiling.
 - IMPORTANT: before saying a Unity task is done, committing or handing off, follow `skills/unity/unity-check/SKILL.md` and paste its result line plus the real evidence. No PASS line, not done.
 - Do not edit or delete tests to make the gate pass unless the task is to change those tests.
