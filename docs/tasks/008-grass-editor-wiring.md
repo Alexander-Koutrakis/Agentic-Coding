@@ -3,7 +3,7 @@
 Branch: `trial/001-grass` · Project: `Test Environments/Unity Agentic Kit test/` · Plan: `docs/features/grass/implementation-plan.md` (T5)
 Coder: csharp · Profile: normal
 Pipeline: coder → `unity-check` → code reviewer → report to the human.
-Status: todo
+Status: done
 
 ## Goal
 The blade mesh is checked, a material using `Kit/GrassInstanced` exists, the grass feature is on the PC renderer, and a reference scene `GrassReference` shows the 50 x 50 m patch with two fixed camera poses (whole patch, about half). Everything binary or YAML is changed through UnityMCP, never as text.
