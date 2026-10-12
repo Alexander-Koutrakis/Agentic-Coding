@@ -23,7 +23,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    uv run --no-project python scripts/unity/file_gates.py begin --project "<project>" --card docs/tasks/<card>.md
    uv run --no-project python scripts/unity/file_gates.py run --project "<project>"
    ```
-   - `begin` runs **once, when the task starts** (before your first edit; the lead's brief says so). It records HEAD as the task's base and the card. Every gate then compares against that same base, so earlier committed work (brief, plan, other cards) is never flagged (T1-8, T1-12). Without `begin` the base is `main`. The next task needs its own `begin`.
+   - `begin` runs **once, when the task starts** (before your first edit; the lead's brief says so). It records HEAD as the task's base, the card and the branch; on any other branch (for example `main` after the merge) the record is ignored. Every gate then compares against that same base, so earlier committed work (brief, plan, other cards) is never flagged (T1-8, T1-12). Without a record for the current branch the base is `main`. The next task needs its own `begin`.
    - `run` runs format, assets, scope, code-rules in that order and stops at the first one that does not pass. It prints that gate's `FAIL <gate>: ...` line and up to 10 details (full report in `.agent/logs/<gate>.txt`). Do not refresh or compile after a failure.
    - Exit 1: that `FAIL <gate>: ...` line **is** the result line; paste it and its details.
    - Exit 2 (`ERROR ...`, a bad path, missing tool, unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.

@@ -114,3 +114,14 @@ def test_finish_rejects_inconsistent_editor_results(task, capsys, editor, errors
 
     assert code == 1
     assert capsys.readouterr().out.startswith(expected)
+
+
+def test_a_base_recorded_on_another_branch_is_ignored(task, capsys):
+    gates(task, "begin", *ARGS, "--card", CARD)
+    task.git("switch", "-q", "main")
+
+    code = gates(task, "run", *ARGS)
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "scope: no card" in out and out.strip().endswith("base main")
