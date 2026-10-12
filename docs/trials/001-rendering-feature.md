@@ -31,3 +31,16 @@ Purpose: find out where the kit helps and where it fails when an agent builds a 
 
 ## After the trial
 Update `docs/HANDOFF.md`, add the friction to `docs/spikes` or a new trial log, and turn the repeats into changes to the skills or scripts.
+
+## Trial 001 — grass (branch `trial/001-grass`)
+Feature: GPU-instanced grass as a URP renderer feature. Brief `docs/features/grass/feature.md`, plan `docs/features/grass/implementation-plan.md`, cards `docs/tasks/004` to `007`. Friction: `logs/friction-log.md` (T1-n rows).
+Tokens: main-session stages show `n/a`: the session's token counter resets every turn, so only subagent usage (reported by the Agent tool) is exact.
+
+### Seeded flaw
+(filled at stage 3; do not tell the reviewers)
+
+### Ledger
+| # | Stage / role | Agent / session | Files loaded | Output file | Tokens | Wall time | Evidence |
+|---|---|---|---|---|---|---|---|
+| 1 | Architect | main session (Claude Sonnet 5.5) | `skills/roles/architect/SKILL.md`, `templates/feature.md`, plan §4.6, `docs/trials/001-rendering-feature.md` | `docs/features/grass/feature.md` | n/a | 19:30 to 19:45 incl. human answers | `PASS docs: 1 files`; approved 2026-10-12 |
+| 2 | Director | main session | `skills/roles/director/SKILL.md`, `templates/implementation-plan.md`, `templates/task-card.md`, `skills/style/csharp-architecture.md`, `minimal-code.md`, `csharp-performance.md`, plan §4.4, perf skill, toy feature and sweep test | `docs/features/grass/implementation-plan.md`, `docs/tasks/004` to `007` | n/a | 19:45 to 19:48 (3 docs_check fix rounds) | `PASS docs: 5 files`; friction T1-1 to T1-3 |
