@@ -19,7 +19,7 @@ namespace Kit.Grass.Tests
     {
         const string Feature = "grass";
         const int Seed = 12345;
-        const int Repeats = 3;
+        const int Repeats = 5;
         const int MillionCount = 1000000;
         const float GroundVisibleLimit = 0.6f; // the culler must keep less than this share of the blades in the ground pose
         const int GroundCheckMinCount = 20000;
@@ -70,7 +70,7 @@ namespace Kit.Grass.Tests
             Debug.Log("buffers at " + feature.BladeCount + " blades: " + bytes + " bytes (" + (bytes / (1024.0 * 1024.0)).ToString("F1") + " MiB)");
         }
 
-        // The full sweep: baseline N = 0 first and last, 3 shuffled repeats in between (ground pose, the fit reads these),
+        // The full sweep: baseline N = 0 first and last, 5 shuffled repeats in between (ground pose, the fit reads these),
         // then one whole-patch run per point and the OFF run at a million blades.
         [UnityTest, Timeout(3600000)]
         public IEnumerator Sweep_Grass()
