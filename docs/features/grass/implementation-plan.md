@@ -1,7 +1,7 @@
 # Plan: grass
 
 Brief: `docs/features/grass/feature.md` · Tier: medium
-Status: draft (revision 2, 2026-10-12: GPU frustum culling and shaders added after the human's request) · Written by the Director.
+Status: approved 2026-10-12 (revision 2: GPU frustum culling and shaders) · Written by the Director.
 Styles that apply: `csharp-architecture`, `csharp-performance`, `shader`
 
 ## Approach
@@ -89,7 +89,5 @@ Brief acceptance coverage:
 |---|---|---|
 | architecture and style | changes | 0 critical, 3 major: Unity-facing feature held logic (added `GrassSystem`, the feature is a thin adapter); per-frame cull steps split between culler and pass (the culler's `Record` owns them); throw vs result policy unclear (`TryCreate` pre-validates). 6 minor: `in` on a class, setup allocation, data classes hold references only, shader stage and precision, SRP Batcher note, shader and kernel names. All applied. |
 | performance and GC | changes | 0 critical, 3 major: no per-frame counter reset named; mesh triangle cost unbounded; cull sphere ignored mesh center and scale (edge blades lost). 6 minor: kernel layout, vertex lighting, Scene view contamination, low-N noise, 6.4 MB array kept alive, open question not answered. All applied. |
-| shader | | |
-| unnecessary scope | not run (medium tier) | |
 
-Human approval:
+Human approval: Alexandros, 2026-10-12 (brief, plan, component cut, shader exception)

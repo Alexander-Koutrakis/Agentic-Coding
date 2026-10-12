@@ -1,6 +1,6 @@
 # Feature: grass
 
-Tier: medium · Status: draft (amended 2026-10-12: GPU frustum culling and shaders added, awaiting approval) · Owner: Alexandros
+Tier: medium · Status: approved 2026-10-12 (amended: GPU frustum culling and shaders) · Owner: Alexandros
 Written by the Architect with the human. Describes systems and behavior, not code.
 
 ## Goal
