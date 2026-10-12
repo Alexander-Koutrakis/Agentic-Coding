@@ -4,7 +4,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Spikes 002 and 003 done: the sweep harness (main/render/GPU/feature ms, slope per 1000 instances, run logs) works on a toy rendering feature. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
+- Phase: **1 — Verification (Unity)**. Spikes 001-003 are merged into `main` (D12, D17; local only, not pushed). Spikes 002 and 003: the sweep harness (main/render/GPU/feature ms, slope per 1000 instances, run logs) works on a toy rendering feature. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
 - Repo contains: docs, CLAUDE.md, gate skills, perf skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), Unity test project with the canary `Assets/Kit/Spike/` (3 EditMode tests) and the perf library `Assets/Kit/Perf/` (`Kit.Perf` runner/writer, toy feature, sweep tests).
 - **The kit is ready for Trial 001**: build a new rendering feature with another agent following the kit; protocol in `docs/trials/001-rendering-feature.md`.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
@@ -12,12 +12,18 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Next step
 1. **Trial 001** (`docs/trials/001-rendering-feature.md`): the human and a second agent build a real rendering feature with the kit; record friction; turn repeats into structure. Fill the task card (feature, sweep points, budget, reference scene) with the agent first.
-2. Housekeeping still open: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); review the Editor-made settings changes (list in the 2026-10-12 Spike 002 entry) and decide commit or revert; merge the spike branches (`spike/002-...`, `spike/003-...`) into `main` when you accept them.
+2. Housekeeping still open: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); review the Editor-made settings changes (list in the 2026-10-12 Spike 002 entry; still uncommitted in the working tree) and decide commit or revert; push `main` when you want it on `origin` (4 commits ahead); the spike branches `spike/002-profiler-harness` and `spike/003-sweep-harness` can be deleted (their commits are in `main`).
 3. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time (`ProfilingSampler`); baselines (`Perf/<feature>/baseline.json`).
 4. Kit repo skeleton (§4 layout: `scripts/`, `templates/`, `logs/`), root AGENTS.md, skill template, skill linter.
 5. Later: player-build numbers, visual gate (screenshot diff), shader gate.
 
 ## Session log
+### 2026-10-12 (end) — spike branches merged into main
+- `main` fast-forwarded from `70a0071` to `26d3ca3` (history was linear: 002 on top of main, 003 on top of 002), so Spikes 002 and 003 are in `main`: Spike 002 harness, plan §4.4 + D14-D16, `Kit.Perf`, `perf_analyze.py`, skill `unity-perf-harness`, `justfile`, Trial 001 protocol. Done as a local ref update (`git fetch . spike/003-sweep-harness:main`) so the Editor's working files were not swapped. Nothing pushed: `main` is 4 commits ahead of `origin/main`.
+- `just check` (new): runs the 15 Python tests, exit 0; Unity is still gated by `unity-check` through UnityMCP.
+- Not merged and still in the working tree, uncommitted: Editor-made changes to `Mobile_RPAsset.asset`, `EditorSettings.asset`, `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset`, new `SceneTemplateSettings.json`.
+- Next: Trial 001 on a branch `trial/001-<feature>` from `main`.
+
 ### 2026-10-12 (later) — Spike 003: sweep harness + analyzer + perf skill
 - Branch `spike/003-sweep-harness` (from `spike/002-...`). Plan §4.4 rewritten with the guideline; decisions D14 (guideline defaults: 100 warmup + 300 measured frames, median/p95 in ms, sweep + slope, log every run), D15 (Editor GPU numbers relative-only), D16 (C# collects raw samples, Python analyzes).
 - Built `Assets/Kit/Perf/` (runner, writer, toy feature, sweep tests), `scripts/unity/perf_analyze.py` (15 tests, all pass), skill `unity-perf-harness`, `CLAUDE.md` pointer, `Perf/.gitignore` + `Perf/toy-instances/feature.json`. Details, results and friction: `docs/spikes/003-sweep-harness.md`.
