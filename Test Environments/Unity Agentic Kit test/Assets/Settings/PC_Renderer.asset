@@ -74,8 +74,8 @@ MonoBehaviour:
     patchSize: {x: 50, y: 50}
     patchCenter: {x: 0, y: 0, z: 0}
     seed: 12345
-    minScale: 0.8
-    maxScale: 1.2
+    minScale: 2
+    maxScale: 3
     mesh: {fileID: -462981019419857548, guid: 67a67801e486e5a42bb105a45614d8cf, type: 3}
     material: {fileID: 2100000, guid: fd46928421be4ea4a8e38f4cc6964b53, type: 2}
     cullShader: {fileID: 7200000, guid: 5d2cfbf7d9f6bc94199d7a086cef975c, type: 3}

@@ -49,7 +49,7 @@ Shader "Kit/GrassInstanced"
                 half3 normalWS = normalize((half3)mul((float3x3)m, input.normalOS));
 
                 Light light = GetMainLight();
-                half3 lit = light.color * saturate(dot(normalWS, light.direction)) + SampleSH(normalWS);
+                half3 lit = light.color * abs(dot(normalWS, light.direction)) + SampleSH(normalWS);
 
                 Varyings output;
                 output.positionCS = TransformWorldToHClip(positionWS);
