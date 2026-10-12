@@ -88,8 +88,9 @@ Enforced in three layers, weakest to strongest:
 **The harness is designed per feature, with the human.** What follows is the guideline and the defaults, not a fixed recipe. Which parameter is swept (instances, resolution, shadow cascades, samples), the budget and the reference scene are decided in the conversation and written into `perf/feature.json`.
 
 #### Measurement rules (defaults, overridable per feature)
-- **Frames:** discard the first **100** (warmup), record the next **300**, per sweep point. Recorders start after warmup (Spike 002: recorders started earlier did not hold the expected sample count).
-- **Metrics, all in ms** (convert from ns once, when writing the result; fields named `main_ms`, `render_ms`, `gpu_ms`, `feature_ms`): main thread, render thread, GPU frame, and the feature's own marker/pass. Per metric: **median and p95** over the 300 frames. Whole-frame GC bytes are recorded as context.
+- **Frames:** discard the first **100** (warmup), record the next **300**, per sweep point. Recorders start after warmup and have headroom in capacity: a `ProfilerRecorder` that reaches its capacity resets (Spike 002 and 003), and its first sample is the partial frame in which it started, so it is dropped.
+- **Metrics, all in ms** (convert from ns once, when writing the result; fields named `main_ms`, `render_ms`, `gpu_ms`, `cpu_ms`, `feature_ms`): main thread, render thread, GPU frame, CPU frame, and the feature's own marker. Per metric: **median and p95** over the 300 frames (median = mean of the two middle values for an even count; p95 = nearest rank). Whole-frame GC bytes are recorded as context.
+- **Where they come from (verified in the Editor, Spike 003):** `FrameTimingManager` (`CaptureFrameTimings` each frame, `GetLatestTimings(1, ...)`; `FrameTiming.cpuMainThreadFrameTime`, `cpuRenderThreadFrameTime`, `gpuFrameTime`, `cpuFrameTime`, all ms). Results arrive 4 frames late, so the runner de-duplicates by `frameStartTimestamp`, drains 8 extra frames and drops the first 4 records. The feature marker and GC come from `ProfilerRecorder`. `FrameTimingManager.IsFeatureEnabled()` was true in the Editor with no settings change. Per-pass GPU time (`ProfilingSampler.gpuElapsedTime`) exists but is not wired yet.
 - **Unfreeze the frame rate:** `vSyncCount = 0`, `targetFrameRate = -1`, fixed resolution and quality level, so main-thread and GPU time are not capped (Spike 002: main thread sat at ~16.5 ms, the frame cap).
 - **Deterministic scene:** fixed camera or scripted path, fixed random seed, fixed time/wind/animation, same camera at every sweep point.
 - **Feature ON vs OFF** in the same run; the **N = 0 point with the feature on** gives its fixed cost.
@@ -97,23 +98,25 @@ Enforced in three layers, weakest to strongest:
 
 #### Sweep and slope
 - Sweep a quality parameter N over a list chosen with the human, e.g. `[1000, 3000, 6000, 10000, 50000, 100000]` instances. Always include the baseline point (N = 0 or feature off) first and last (drift check). Repeat each point (default 3 runs) in randomized order for an error bar.
-- **Fit each metric separately** (least squares of the per-point median against N). Report **ms per 1000 instances** (slope x 1000), the **intercept** (fixed cost), **R^2**, and the slopes of the lower and upper halves of the sweep.
+- **Fit each metric separately** (least squares of the per-point median against N). Report **ms per 1000 instances** (slope x 1000), the **intercept** (fixed cost), **R^2**, and the slopes of the lower and upper halves of the sweep. A fit may start at `fit_min_n` (set in `feature.json`) because light loads sit in a different hardware state: on the test machine GPU time at 1k-6k instances was inflated and not monotonic, while from 10k up it was linear (R^2 0.99-1.00). Excluded points stay in the report. Put at least 4 sweep points in the loaded range.
 - Frame time is about max(CPU, GPU): fitting only frame time hides GPU cost in a CPU-bound scene. Treat the feature's own pass/marker as the primary metric and the thread times as context.
 - If R^2 is low or the half-slopes disagree, the report says "not linear in this range" and gives the points, not one number. Small N may sit below the noise floor (Spike 002: ~15% spread on a 12 ms marker); trust the slope from the large counts over the cost at the small ones.
 
 #### Logs and files (D16)
-Per run, in `perf/<feature>/runs/<timestamp>-<n>/`:
-- `run.json`: config (frames, sweep point, seed), git commit, Unity version, machine id, GPU name, resolution, quality level, Editor or player, and per-metric median/p95 in ms.
-- `frames.csv`: raw per-frame samples in ms, so the analysis can be redone without Unity.
-- One line appended to `perf/<feature>/index.jsonl` (timestamp, N, path, key numbers).
-The **C# runner** (Play Mode test through `run_tests`; do not use `manage_editor play`, Spike 002 friction #2) writes these files and returns one summary line. The **Python script** (`perf_analyze.py`) reads them and writes `perf/<feature>/report.json` with per-point stats, the fits, the budget verdicts, and a short text summary. Each result is baselined once accepted; later runs compare against it, with 10-15% tolerance in the Editor (Spike 002 spread), tighter with a player build.
+Per run, in `Perf/<feature>/runs/<timestamp>-<label>/` (in the Unity project, next to `Assets/`):
+- `run.json`: config (frames, sweep point, seed, session id), git commit and dirty flag, Unity version, machine, GPU name, resolution, quality level, Editor or player, and per-metric median/p95/min/max with units.
+- `frames_timing.csv` (main, render, gpu, cpu; same row = same frame) and `frames_recorders.csv` (feature marker, GC; a separate series), so the analysis can be redone without Unity.
+- One line appended to `Perf/<feature>/index.jsonl`.
+Committed: `Perf/<feature>/feature.json` (sweep points, `fit_min_n`, budgets) and accepted baselines. Ignored: `runs/`, `index.jsonl`, `report.json` (`Perf/.gitignore`).
+The **C# runner** (`Assets/Kit/Perf/Runtime`, `Kit.Perf`; a Play Mode test through `run_tests`; do not use `manage_editor play`, Spike 002 friction #2) writes these files. The **Python script** (`scripts/unity/perf_analyze.py`, 15 unit tests in `test_perf_analyze.py`) reads them, recomputes every median/p95 from the CSV and refuses a run whose `run.json` disagrees, rejects sessions that mix commits, machines or settings, analyzes the latest session by default, and writes `Perf/<feature>/report.json` with per-point stats, fits, drift, budget verdicts and a short summary. Exit 0 ok, 1 a budget failed, 2 bad data. Each result is baselined once accepted; later runs compare against it. **Tolerance in the Editor: 10-15%.** Two full sweeps of the toy feature on one machine gave loaded-range slopes within about 15% of each other (GPU 0.032 vs 0.027, feature marker 0.019 vs 0.022 ms per 1000); tighter needs a player build.
 
 #### Budgets
 Declared in the task card and `feature.json`: a per-1000-instances cost, a total at the real in-game count, and optional GC limits (whole-frame GC has a ~21 KB Editor floor; per-marker GC needs a different measure or a player build).
 
 #### Open
-- GPU and render-thread timing API in the Editor: unverified (Spike 003 probes it).
-- GPU cost per pass: `ProfilingSampler`/`ScriptableRenderPass` scope vs frame GPU time.
+- GPU cost per pass: `ProfilingSampler`/`ScriptableRenderPass` scope vs frame GPU time (not wired).
+- Drift check: the baseline (N = 0) is an idle-GPU point and drifts 27-90% between first and last run, so the warning is noisy. Proposal: repeat a **loaded reference point** first and last, set in `feature.json`.
+- Main-thread time carries no signal for a GPU-bound feature (flat about 5 ms); keep it as context only.
 - Player-build numbers (later phase).
 
 ### 4.5 Unity gate ladder (proposed, 2026-10-10)
@@ -129,7 +132,7 @@ Declared in the task card and `feature.json`: a per-1000-instances cost, a total
 | | **Scope** | script on `git diff`: only files the task card allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval | to build |
 | | **Tests** | EditMode (built) + PlayMode; new code has new tests | partly built |
 | Graphics feature | **Shader** | shader compile errors/warnings via console/MCP | to build |
-| | **Perf** | harness exists, runs in Play Mode, sweep slope and totals within budget (D7, D14-D16 / §4.4) | Spike 003 |
+| | **Perf** | harness exists, runs in Play Mode, sweep slope and totals within budget (D7, D14-D16 / §4.4) | built (Spike 003): skill `unity-perf-harness`; `perf_check.py` as a gate still to do |
 | | **Visual** | fixed-camera screenshot vs reference image with tolerance | later |
 | Before merge | **Player build** | development build compiles (catches Editor-only code in runtime) + full test suite | later |
 

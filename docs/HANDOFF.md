@@ -4,20 +4,28 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. Spike 002 done: Play Mode perf harness works on a CPU marker. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
-- Repo contains: docs, CLAUDE.md, gate skills, Unity test project with the canary fixture `Assets/Kit/Spike/` (`Kit.Spike` + 3 EditMode tests, all green).
+- Phase: **1 — Verification (Unity)**. Spikes 002 and 003 done: the sweep harness (main/render/GPU/feature ms, slope per 1000 instances, run logs) works on a toy rendering feature. Spike 001 merged into `main` (D12); gate skills `unity-wait-ready` + `unity-check` in `skills/unity/`, wired into CLAUDE.md (D11, D13).
+- Repo contains: docs, CLAUDE.md, gate skills, perf skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), Unity test project with the canary `Assets/Kit/Spike/` (3 EditMode tests) and the perf library `Assets/Kit/Perf/` (`Kit.Perf` runner/writer, toy feature, sweep tests).
+- **The kit is ready for Trial 001**: build a new rendering feature with another agent following the kit; protocol in `docs/trials/001-rendering-feature.md`.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. Biggest gap: `refresh_unity` does not wait for compile; poll `mcpforunity://editor/state`.
 - Open (plan §6): the questions still unchecked.
 
 ## Next step
-1. ~~Create test project + install CoplayDev/unity-mcp~~ done (D10). ~~Spike 001~~ done; see `docs/spikes/001-unity-loop.md` (Results, Friction, Proposals).
-2. ~~Merge spike branch~~ (D12) · ~~CLAUDE.md rules~~ (gate, console, re-read, profiler, bridge port).
-3. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — check whether an IDE with format-on-save was open).
-4. ~~Spike 002~~ done (`docs/spikes/002-profiler-harness.md`). Still open: friction #3 experiment; review the Editor-made settings changes (see log) and decide commit or revert; decide where `Perf/` results and baselines live.
-5. Create kit repo skeleton (§4 layout), root AGENTS.md, skill template.
-6. Build `graphics-feature` skill (inputs from Spike 002 proposals 1-7) + perf harness template + `perf_check.py`; prove it on one toy feature (e.g. a simple full-screen effect) with ON/OFF numbers.
+1. **Trial 001** (`docs/trials/001-rendering-feature.md`): the human and a second agent build a real rendering feature with the kit; record friction; turn repeats into structure. Fill the task card (feature, sweep points, budget, reference scene) with the agent first.
+2. Housekeeping still open: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); review the Editor-made settings changes (list in the 2026-10-12 Spike 002 entry) and decide commit or revert; merge the spike branches (`spike/002-...`, `spike/003-...`) into `main` when you accept them.
+3. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time (`ProfilingSampler`); baselines (`Perf/<feature>/baseline.json`).
+4. Kit repo skeleton (§4 layout: `scripts/`, `templates/`, `logs/`), root AGENTS.md, skill template, skill linter.
+5. Later: player-build numbers, visual gate (screenshot diff), shader gate.
 
 ## Session log
+### 2026-10-12 (later) — Spike 003: sweep harness + analyzer + perf skill
+- Branch `spike/003-sweep-harness` (from `spike/002-...`). Plan §4.4 rewritten with the guideline; decisions D14 (guideline defaults: 100 warmup + 300 measured frames, median/p95 in ms, sweep + slope, log every run), D15 (Editor GPU numbers relative-only), D16 (C# collects raw samples, Python analyzes).
+- Built `Assets/Kit/Perf/` (runner, writer, toy feature, sweep tests), `scripts/unity/perf_analyze.py` (15 tests, all pass), skill `unity-perf-harness`, `CLAUDE.md` pointer, `Perf/.gitignore` + `Perf/toy-instances/feature.json`. Details, results and friction: `docs/spikes/003-sweep-harness.md`.
+- Verified: console 0 errors / 0 warnings; EditMode canary 3/3; Spike 002 PlayMode 1/1; two full sweeps of 20 runs each pass (about 70 s each); analyzer cross-check against the C# stats had no mismatch.
+- Findings: Editor gives GPU and render-thread time (FrameTimingManager, 4 frames late); loaded-range slopes reproduce within about 15% across two sweeps (GPU 0.032 vs 0.027 ms per 1000); GPU time at light load is inflated and not monotonic, so the fit supports `fit_min_n`; main-thread time has no signal for this feature; `ProfilerRecorder` resets at capacity and its first sample is partial (handled).
+- Not verified: per-pass GPU time, player build, any other machine, a real feature. The drift warning is noisy (baseline is an idle point).
+- Trial 001 protocol written (`docs/trials/001-rendering-feature.md`); not started.
+
 ### 2026-10-12 — Spike 002 run (Play Mode profiler harness) + housekeeping
 - Branch `spike/002-profiler-harness`. Harness under `Assets/Kit/Spike/Perf/` (workload + `ProfilerMarker`, PlayMode test with `ProfilerRecorder`, OFF vs ON, p50/p95, `Perf/spike-002/result.json`). Results, friction and proposals in `docs/spikes/002-profiler-harness.md`.
 - Gate: PlayMode 1/1, EditMode canary 3/3, 0 console errors, 0 warnings. Code compiled without edits; the one failure (sample count 30 vs 120) was my buffer assumption, fixed by starting the recorders after warmup.

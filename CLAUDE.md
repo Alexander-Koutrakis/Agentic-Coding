@@ -25,6 +25,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 ## Profiler rules
 - `get_counters`: always pass explicit counter names, never a whole category (output is huge).
 - Numbers from the Edit Mode Editor are zeros. Measure in Play Mode, discard the first samples after entering Play, and never report a single frame as a result.
+- IMPORTANT: for the cost of a rendering feature (sweep, ms per 1000 instances, GPU/render/main time), follow `skills/unity/unity-perf-harness/SKILL.md`. Agree the sweep points and the budget with the human first. Run it through `run_tests`, never `manage_editor play`. Editor numbers are relative only.
 
 ## Git
 - Work on a branch named for the task. Commit with clear messages. Never push.
