@@ -20,7 +20,7 @@ from itertools import product
 from pathlib import Path
 
 from changed_files import Change, changed_files, merge_base, read_at, repo_root
-from gate_common import exit_with, finish, parser, resolve_project
+from gate_common import exit_with, finish, parser, resolve_base, resolve_project
 from scope_check import CODE_OR_COMMENT
 from unity_assemblies import Assemblies
 
@@ -331,6 +331,7 @@ def main(argv: list[str] | None = None) -> int:
     p = parser(__doc__.splitlines()[0])
     args = p.parse_args(argv)
     repo = repo_root(args.repo)
+    args.base = resolve_base(repo, args.base)
     project = resolve_project(repo, args.project)
     mb = merge_base(repo, args.base)
     asm = Assemblies(repo, project, mb)

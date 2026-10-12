@@ -15,16 +15,16 @@ A task card with `Coder: csharp` and an approved plan. One card per run.
 - Write only inside the card's `scope` block.
 
 ## Steps
-1. Create or switch to the branch named in the card.
+1. Create or switch to the branch named in the card. Before your first edit run `file_gates.py begin` with the card (see `unity-check` step 0); it fixes the base every gate compares against.
 2. Apply `minimal-code.md`, then write the code in the structure the style guide requires.
-3. After every change run `unity-wait-ready`, then the console check.
+3. After every change run `unity-wait-ready`, then the console check. If you cannot read the `mcpforunity://editor/state` resource, use its "Fallback" section; never replace it with a fixed delay.
 4. Write or update the tests the card asks for. Do not weaken existing tests.
 5. Run `unity-check` with the card. On FAIL fix the cause and run it again. After 3 failed attempts stop and report BLOCKED with the evidence.
 6. For `hot-path`: run the perf harness and attach the numbers against the budget.
 7. Commit on the branch with a clear message. Never push or merge.
 
 ## How to validate
-`unity-check` returns its PASS line. No PASS line, not done.
+`unity-check` ends with the PASS line printed by `file_gates.py finish`. No PASS line from that command, not done; do not type the line yourself.
 
 ## What to return
 The PASS line, the evidence it prints, any `kit-allow` you added with its reason, deviations from the card, and for hot-path the budget numbers. Or BLOCKED with the last FAIL output.

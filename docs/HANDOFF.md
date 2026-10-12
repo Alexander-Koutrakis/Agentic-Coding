@@ -6,6 +6,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ## Current state
 - Phase: **1 — Verification (Unity)**. `main` (local, now including Trial 001) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
+- Gate plumbing (D28, task 013, branch `task/013-gate-plumbing`, not merged): `scripts/unity/file_gates.py` (`begin`, `run`, `finish`) runs the file gates against one recorded base and composes the PASS line; `unity-wait-ready` has a fallback without a resource reader.
 - Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules (KIT001-004), analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling. Frozen (D20).
 - Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
 - Feature pipeline (plan §4.6, D15-D20): role skills, style guides v1, templates, `scripts/core/docs_check.py`. **Run end to end once: Trial 001 (grass), branch `trial/001-grass`, not merged, not pushed** (see the top log entry and `docs/trials/001-rendering-feature.md`).
@@ -15,14 +16,20 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Next step
 1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
-2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); apply the friction proposals T1-1 to T1-18 (`logs/friction-log.md`), first the repeated ones: unity-wait-ready for subagents (T1-9, T1-11), one scope base for all gates (T1-8, T1-12), single gate runner for the PASS line (T1-10).
+2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); friction proposals T1-8 to T1-12 are fixed (task 013, D28); the rest (T1-1 to T1-7, T1-13 to T1-18 in `logs/friction-log.md`) are open. Merge `task/013-gate-plumbing` or not (human).
 3. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
 4. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
 5. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
-6. Later: player-build numbers, visual gate (screenshot diff), shader gate.
+6. Later: player-build numbers, visual gate (screenshot diff).
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-12 (task 013: gate plumbing) — branch `task/013-gate-plumbing`
+- At the human's request: shader gate, 1M budget and control run declared out of scope (D27) and removed from plan and handoff. Fixed friction T1-8 to T1-12 (D28).
+- One base: `--base`, else the rev recorded by `file_gates.py begin`, else `main`, for all four gates. One command: `file_gates.py run`; `finish` composes the PASS line and refuses stale file gates (files changed after `run`) or inconsistent Editor results. `unity-wait-ready` Fallback: an `execute_code` probe (compile flags plus an AppDomain marker that shows a reload); tried live: after a forced refresh the probe returned `compiling false, fresh true`. Skills `unity-check`, `unity-wait-ready`, csharp-coder and shader-coder updated.
+- Evidence: `just check` 238 passed (11 new in `tests/test_file_gates.py`); EditMode 18/18 passed, 0 console errors, 0 warnings. Not tested: a subagent actually using the fallback; PlayMode.
+- The three `ProjectSettings/*.asset` line-ending changes stay uncommitted (git does not list them in the diff, so the scope gate ignores them).
 
 ### 2026-10-12 (merge of Trial 001) — `trial/001-grass` merged into local `main`
 - Merged by the human's request with `git merge --no-ff` (`edfac24`). Not pushed: `main` is ahead of `origin/main`. Branch `trial/001-grass` kept, not deleted.
@@ -36,8 +43,8 @@ Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, 
 - Escapes: black blades from back-face lighting (found at T5 screenshots, fixed in card 010); code review found 6 majors the plan review missed (leaks on partial failure, shared test fixture, buffers not released on disable, perf test cannot show gain, perf headline understated).
 - Final gates on the branch: `just check` 227 passed; unity-check `PASS 18/18 EditMode + 6/6 PlayMode readback + Smoke_OnePoint, format 16 files, assets ok (85 assets, 85 .meta), scope: no card, code-rules ok, 0 errors, 0 warnings`. The full `Sweep_Grass` was not re-run after the last fix commit.
 - Human decisions during the trial: tier medium, no tint, budget 0.05 ms per 1000 and 3 ms at 100k, patch 50 x 50 m, scene component cut, GPU culling with shaders allowed, sweep run confirmed.
-- Later the same day, at the human's request: sweep raised to 20k doubling to 640k then 1M, from a ground-level camera (card 012, commit 8916ef3). Result: linear 0.0022 ms per 1000 blades placed, 2.686 ms at 1M (500,099 visible, culler keeps ~50%), vs 4.357 ms with the whole patch in view: culling gain now visible (`perf-result.md`). No total budget for 1M has been set (human to give one). Not run again after this: the full unity-check EditMode gate (the final gate above predates card 012; PlayMode 8/8 passed in the coder's run).
-- Review with the human after the trial: the human keeps the kit as is (D25). Plan updated (decisions D25 and D26, Trial 001 result under §4.6, open questions). Baseline accepted (`Perf/grass/baseline.json`). Open: control run with a plain prompt, shader screenshot check, friction fixes.
+- Later the same day, at the human's request: sweep raised to 20k doubling to 640k then 1M, from a ground-level camera (card 012, commit 8916ef3). Result: linear 0.0022 ms per 1000 blades placed, 2.686 ms at 1M (500,099 visible, culler keeps ~50%), vs 4.357 ms with the whole patch in view: culling gain now visible (`perf-result.md`). A 1M budget is out of scope (D27). Not run again after this: the full unity-check EditMode gate (the final gate above predates card 012; PlayMode 8/8 passed in the coder's run).
+- Review with the human after the trial: the human keeps the kit as is (D25). Plan updated (decisions D25 and D26, Trial 001 result under §4.6, open questions). Baseline accepted (`Perf/grass/baseline.json`). Out of scope (D27): control run, shader gate, 1M budget. Open: friction fixes.
 - Three `ProjectSettings/*.asset` files stay modified (line endings only, made by Unity); not committed.
 
 ### 2026-10-12 (unity-check on merged main) — PASS

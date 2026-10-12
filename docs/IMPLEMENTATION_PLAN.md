@@ -48,6 +48,8 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D24 | 2026-10-12 | Spikes 002 and 003 merged into `main`. `Assets/Kit/Perf` (`Kit.Perf` library, `Kit.Perf.Toy`, sweep tests) stays in the test project as the **perf canary**: the known-good reference for `unity-perf-harness` and `perf_analyze.py`. `just check` is the shell-side gate; Unity stays with `unity-check`. | Same reasoning as D12: the harness needs a fixture that must always run. |
 | D25 | 2026-10-12 | **Keep the feature pipeline as it is** after Trial 001 (human decision, 2026-10-12): the structure stays, the friction list drives improvements. | Trial 001 showed the evidence-producing parts (plan review, code review, readback test, perf harness) earn their cost; the cost and the console-only shader gate are the weak parts. |
 | D26 | 2026-10-12 | **Shaders in Trial 001 were allowed by the human** (GPU culling needs a compute shader and an indirect-draw shader) although the shader gate does not exist; the baseline for a feature is stored as `Perf/<feature>/baseline.json` (accepted by the human, no script reads it yet). | The first graphics feature needed both; the gate and baseline comparison remain to build. |
+| D27 | 2026-10-12 | **Out of scope (human decision):** the shader gate (including a screenshot check for new shaders), a total budget for the 1M-blade grass sweep, and a control run of Trial 001 without the kit. Removed from the plan and the open lists. | Focus on the friction fixes first. Shaders are still written; their only gate is the console. |
+| D28 | 2026-10-12 | **Gate plumbing (friction T1-8 to T1-12):** one base for all file gates (`--base`, else the rev recorded by `file_gates.py begin`, else `main`); one command, `scripts/unity/file_gates.py`, runs the file gates and `finish` composes the PASS line (it refuses if files changed after `run`); `unity-wait-ready` has a fallback that needs no resource reader. | The PASS line was the coder's claim; subagents had no resource reader; every gate except scope listed earlier tasks' files. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
 ## 4. Architecture (draft)
@@ -147,7 +149,7 @@ Declared in the task card and `feature.json`: a per-1000-instances cost, a total
 | | **Asset integrity** | script: every file under `Assets/` has a `.meta`, no orphan `.meta`, no duplicate GUIDs, `.meta` staged with its asset (`scripts/unity/asset_check.py`); MCP: no missing scripts in changed scenes/prefabs | script built (Task 002); MCP part to build |
 | | **Scope** | script on `git diff`: only files the task card's `scope` block allows; no test deleted/weakened; `ProjectSettings/` and `Packages/` changes need approval (`scripts/unity/scope_check.py`) | built (Task 002) |
 | | **Tests** | EditMode (built) + PlayMode; new code has new tests | partly built |
-| Graphics feature | **Shader** | shader compile errors/warnings via console/MCP | to build |
+| Graphics feature | **Shader** | shader compile errors/warnings via console only | out of scope (D27) |
 | | **Perf** | harness exists, runs in Play Mode, sweep slope and totals within budget (D7, D21-D23 / §4.4) | built (Spike 003): skill `unity-perf-harness`; `perf_check.py` as a gate still to do |
 | | **Visual** | fixed-camera screenshot vs reference image with tolerance | later |
 | Before merge | **Player build** | development build compiles (catches Editor-only code in runtime) + full test suite | later |
@@ -184,7 +186,7 @@ You ⇄ Architect ──► feature.md ──(you approve)
 | Director | Brief → plan and task cards; applies the Ponytail ladder to scope ("does it need to exist?") | `style/csharp-architecture.md` | `implementation-plan.md`, task cards |
 | Plan reviewers (2–3) | Find design mistakes and bad habits before code exists. Start lenses: architecture and style conformance; performance and GC; unnecessary scope. Add a shader lens only if the plan has shader tasks | plan + style guides | findings; any one may veto a critical error with evidence |
 | C# coder | One task card | `style/csharp-architecture.md` + Ponytail ladder | code that passes the gate |
-| Shader coder | One shader task card | `style/shader.md` + lighter Ponytail | shader code; shader gate (to build) |
+| Shader coder | One shader task card | `style/shader.md` + lighter Ponytail | shader code; console only (D27) |
 | Code reviewer | Diff vs plan and style, fresh context | plan + style guides | verdict |
 
 Architect and Director need not be separate agents (Director may be the Architect's session in another mode); reviewers and coders are separate because a fresh context is the point.
@@ -199,11 +201,11 @@ Architect and Director need not be separate agents (Director may be the Architec
 
 **Mistake log.** Reviewers append findings to `logs/friction-log.md`. A finding that appears twice becomes a template line, a code-rules check or a hook; otherwise the log is not doing its job.
 
-**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; v1, confirmed 2026-10-11: 3 parameters max, result enums for expected failures, MonoBehaviour as thin adapter, shaders for desktop with hand-written HLSL). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: the shader gate, KIT005. Not yet run end to end.
+**Files (drafted 2026-10-11).** Roles: `skills/roles/*/SKILL.md`. Styles: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`; v1, confirmed 2026-10-11: 3 parameters max, result enums for expected failures, MonoBehaviour as thin adapter, shaders for desktop with hand-written HLSL). Templates: `templates/`. Log: `logs/friction-log.md`. Not yet built: KIT005. Not yet run end to end.
 
 **Measure before adding.** Run one real medium feature through the minimal pipeline (templates, format script, one plan reviewer, coders, gate) and record tokens and time per stage. Add reviewers and roles only where plan review is seen catching real problems.
 
-**Result of Trial 001 (grass, 2026-10-12, D25).** Ran with 2 plan reviewers x 2 rounds, 8 coders, a perf runner and one code reviewer, about 1.5M subagent tokens (`docs/trials/001-rendering-feature.md`). What paid for itself: plan review (caught the seeded per-frame allocation and real design errors: counter reset, cull sphere, ownership), the code reviewer (leaks, shared test state, a misstated perf number), the readback test and the perf harness. What did not: the console-only shader gate (black blades reached the screenshots), hand-assembled PASS lines, `unity-wait-ready` for subagents. No control run with a plain prompt exists. Proposed trims, not yet applied: skip separate Architect/Director agents on a medium feature, merge tiny tasks into one coder, repeat plan review only when scope changes. Friction rows T1-1 to T1-18 in `logs/friction-log.md`; the repeated ones come first (wait-ready for subagents, scope base default, one gate runner).
+**Result of Trial 001 (grass, 2026-10-12, D25).** Ran with 2 plan reviewers x 2 rounds, 8 coders, a perf runner and one code reviewer, about 1.5M subagent tokens (`docs/trials/001-rendering-feature.md`). What paid for itself: plan review (caught the seeded per-frame allocation and real design errors: counter reset, cull sphere, ownership), the code reviewer (leaks, shared test state, a misstated perf number), the readback test and the perf harness. What did not: the console-only shader check (black blades reached the screenshots; accepted, D27), hand-assembled PASS lines, `unity-wait-ready` for subagents. Proposed trims, not yet applied: skip separate Architect/Director agents on a medium feature, merge tiny tasks into one coder, repeat plan review only when scope changes. Friction rows T1-1 to T1-18 in `logs/friction-log.md`; the repeated ones are fixed (D28: wait-ready fallback, one base, one gate runner); T1-1 to T1-7 and T1-13 to T1-18 are open.
 
 ### 4.3 Shared core
 Single gate command per project (`check`), progress/handoff protocol, task cards, friction log,
@@ -233,7 +235,4 @@ review pack (repo zip for a bigger model), approval list.
 - [ ] Distribution of the kit into target projects: Claude Code plugin, git submodule, or copy script?
 - [ ] Sample projects for testing the kit (small Unity project, small Vulkan renderer).
 - [x] Which medium feature is the first end-to-end pipeline run → grass (URP renderer feature with GPU culling), Trial 001, D25.
-- [ ] Shader gate: Trial 001 shows console-only is not enough (black blades); add a fixed-camera screenshot check for new shaders before the visual gate in the ladder.
-- [ ] Control run: same feature with a plain prompt and no kit, to measure what the pipeline buys.
 - [ ] Is the Ponytail ladder really cheaper on our tasks? Compare tokens with and without on one task before keeping it everywhere.
-- [ ] Shader gate: how to read shader compile errors and warnings through the bridge.

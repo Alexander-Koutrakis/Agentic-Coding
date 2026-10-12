@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 
 from changed_files import Change, changed_files, merge_base, read_at, repo_root
-from gate_common import GateError, exit_with, finish, parser, resolve_project
+from gate_common import GateError, exit_with, finish, parser, resolve_base, resolve_project
 from unity_assemblies import Assemblies
 
 GATE = "scope"
@@ -135,6 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--card", required=True, help="task card, relative to the repo root")
     args = p.parse_args(argv)
     repo = repo_root(args.repo)
+    args.base = resolve_base(repo, args.base)
     project = resolve_project(repo, args.project)
     card = repo / args.card
     if not card.is_file():
