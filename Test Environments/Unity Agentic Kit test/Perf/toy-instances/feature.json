@@ -1,0 +1,13 @@
+{
+  "feature": "toy-instances",
+  "sweep_param": "instances",
+  "points": [1000, 3000, 6000, 10000, 50000, 100000],
+  "fit_min_n": 10000,
+  "primary_metric": "gpu_ms",
+  "notes": "Toy feature that proves the harness (Spike 003). Budgets are placeholders, not requirements.",
+  "budgets": [
+    { "metric": "feature_ms", "kind": "per_1000", "max": 0.03 },
+    { "metric": "gpu_ms", "kind": "per_1000", "max": 0.05 },
+    { "metric": "gpu_ms", "kind": "total_at", "n": 100000, "max": 6.0 }
+  ]
+}

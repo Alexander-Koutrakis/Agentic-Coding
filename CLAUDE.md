@@ -15,6 +15,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - Repeated mistakes go to `logs/friction-log.md`.
 
 ## The gate (Unity)
+- `just check` runs the shell-side checks (Python script tests). It does **not** cover Unity: that is `unity-check` below. Report both.
 - IMPORTANT: after any change to scripts or assets, follow `skills/unity/unity-wait-ready/SKILL.md`. Never trust the return value of `refresh_unity`; it returns while still compiling.
 - IMPORTANT: before saying a Unity task is done, committing or handing off, follow `skills/unity/unity-check/SKILL.md` and paste its result line plus the real evidence. No PASS line, not done.
 - Do not edit or delete tests to make the gate pass unless the task is to change those tests.
@@ -31,6 +32,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 ## Profiler rules
 - `get_counters`: always pass explicit counter names, never a whole category (output is huge).
 - Numbers from the Edit Mode Editor are zeros. Measure in Play Mode, discard the first samples after entering Play, and never report a single frame as a result.
+- IMPORTANT: for the cost of a rendering feature (sweep, ms per 1000 instances, GPU/render/main time), follow `skills/unity/unity-perf-harness/SKILL.md`. Agree the sweep points and the budget with the human first. Run it through `run_tests`, never `manage_editor play`. Editor numbers are relative only.
 
 ## Git
 - Work on a branch named for the task. Commit with clear messages. Never push.

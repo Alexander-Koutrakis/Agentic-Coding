@@ -1,0 +1,23 @@
+{
+    "name": "Kit.Perf.Tests.PlayMode",
+    "rootNamespace": "Kit.Perf.Tests",
+    "references": [
+        "Kit.Perf",
+        "Kit.Perf.Toy",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

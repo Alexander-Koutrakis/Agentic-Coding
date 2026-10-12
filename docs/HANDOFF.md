@@ -4,22 +4,50 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 (newest entry on top, keep the "Current state" block current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. `main` (local, not pushed) has Spike 001, Tasks 002 and 003 and the gate skills. Test project folder renamed to `Test Environments` (2026-10-11). Task 003 added the **code-rules gate** (`scripts/unity/code_rules.py`, KIT001-004) and **Microsoft.Unity.Analyzers 1.28.0** inside Unity's compile (`Assets/Kit/Analyzers/`, severities in `Assets/Default.ruleset`).
+- Phase: **1 — Verification (Unity)**. `main` (local) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
 - The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules, analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling.
+- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules (KIT001-004), analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling. Frozen (D20).
+- Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
+- Feature pipeline (plan §4.6, D15-D20): role skills, style guides v1, templates, `scripts/core/docs_check.py`. Nothing run end to end yet.
 - Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
-- Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes, folder renames.
-- **Pipeline redesign drafted** on `docs/pipeline-redesign` (not merged): plan §4.6 and D15-D20, role skills, style guides, templates, friction log. Nothing in it has been run yet. Gate ladder frozen (D20).
+- **Ready for Trial 001** (`docs/trials/001-rendering-feature.md`): build a real rendering feature with the kit.
+- Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
 
 ## Next step
-0. Pipeline (branch `docs/pipeline-redesign`): Alexandros reviews and merges. Then: run one medium feature through the pipeline (templates, one plan reviewer, coders, gate) and record tokens and time per stage. Trim this HANDOFF log (move old entries to `docs/archive/`) so sessions read less.
-1. ~~Merge `task/003-code-rules-analyzers` into `main`~~ done 2026-10-11 (fast-forward, `unity-check` on `main` PASS). Alexandros: push `main` when ready (agents never push). Things worth a look in the review: the deviations and decisions in the session log below (ruleset instead of `.editorconfig`, `||` not counted as editor-guarded, kit-allow on the line above must be comment-only, baseline/editor-only handling of moved files).
-2. Housekeeping: pin unity-mcp to a release tag; investigate what rewrote `SpikeMathTests.cs` (friction #3 — IDE format-on-save?).
-3. Follow-ups noticed in Task 003: fail the gate on `UNT` performance warnings in **changed files only** (needs console parsing matched against `changed_files`; see how noisy they are first); the new-violations check counts per file and rule, so fixing one `Debug.Log` and adding another in the same file passes (accepted in the card); `unity-check` does not yet verify that the analyzer DLL still has its `RoslynAnalyzer` label (CS8032 only covers a DLL that fails to load).
-4. Spike 002: perf harness in Play Mode with a custom `ProfilerMarker` (proposal 5).
-5. Build `graphics-feature` skill + perf harness template + `perf_check.py`; prove it on one toy feature with ON/OFF numbers.
+1. **Check the merge**: run `just check` and `unity-check` on `main` (the merge combined two machines' work and was not run in Unity yet). Then push `main` when you want it on `origin` (agents never push).
+2. **Trial 001**: run one medium feature through the pipeline (templates, one plan reviewer, coders, gate, perf harness) and record tokens and time per stage; fill the task card (feature, sweep points, budget, reference scene) with the agent first. Trim this HANDOFF log (move old entries to `docs/archive/`).
+3. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
+4. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
+5. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
+6. Later: player-build numbers, visual gate (screenshot diff), shader gate.
 
 ## Session log
+### 2026-10-12 (merge) — reconciled two machines
+- Alexandros developed on two machines without pulling: `origin/main` (Spikes 002/003, perf harness, 7 commits, still under the old path `Test Enviroments`) and local `main` (Tasks 002/003, rename to `Test Environments`, pipeline redesign, 20 commits). Merged `origin/main` into local `main`; harness files moved to `Test Environments/`.
+- Decision numbering collided (both used D14-D17). Kept the pipeline numbers (D14-D20, dated 2026-10-11) and renumbered the perf-harness decisions to **D21-D24**; references updated in the plan, spike 003, `perf_analyze.py`, the perf skill and `PerfTypes.cs`. Entries below that say D14-D17 for the harness mean D21-D24.
+- Stale `Test Enviroments` path in harness-side docs (spike 002/003, trial 001, old log entries) is historical; fixed where it was a live reference.
+
+### 2026-10-12 (end) — spike branches merged into main, cleaned up
+- Then: spike branches `spike/002-...` and `spike/003-...` deleted (`git branch -d`, merged). The Editor-made settings were committed (`781ed5d`): `Mobile_RPAsset.asset` (URP upgrade 12 to 13), `EditorSettings.asset` (`m_EnterPlayModeOptions` 0 to 1, origin unknown), new `SceneTemplateSettings.json`. `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset` had line-ending-only changes and add nothing. Working tree clean; `main` is 6 commits ahead of `origin/main`, not pushed.
+- `main` fast-forwarded from `70a0071` to `26d3ca3` (history was linear: 002 on top of main, 003 on top of 002), so Spikes 002 and 003 are in `main`: Spike 002 harness, plan §4.4 + D14-D16, `Kit.Perf`, `perf_analyze.py`, skill `unity-perf-harness`, `justfile`, Trial 001 protocol. Done as a local ref update (`git fetch . spike/003-sweep-harness:main`) so the Editor's working files were not swapped. Nothing pushed: `main` is 4 commits ahead of `origin/main`.
+- `just check` (new): runs the 15 Python tests, exit 0; Unity is still gated by `unity-check` through UnityMCP.
+- Next: Trial 001 on a branch `trial/001-<feature>` from `main`.
+
+### 2026-10-12 (later) — Spike 003: sweep harness + analyzer + perf skill
+- Branch `spike/003-sweep-harness` (from `spike/002-...`). Plan §4.4 rewritten with the guideline; decisions D14 (guideline defaults: 100 warmup + 300 measured frames, median/p95 in ms, sweep + slope, log every run), D15 (Editor GPU numbers relative-only), D16 (C# collects raw samples, Python analyzes).
+- Built `Assets/Kit/Perf/` (runner, writer, toy feature, sweep tests), `scripts/unity/perf_analyze.py` (15 tests, all pass), skill `unity-perf-harness`, `CLAUDE.md` pointer, `Perf/.gitignore` + `Perf/toy-instances/feature.json`. Details, results and friction: `docs/spikes/003-sweep-harness.md`.
+- Verified: console 0 errors / 0 warnings; EditMode canary 3/3; Spike 002 PlayMode 1/1; two full sweeps of 20 runs each pass (about 70 s each); analyzer cross-check against the C# stats had no mismatch.
+- Findings: Editor gives GPU and render-thread time (FrameTimingManager, 4 frames late); loaded-range slopes reproduce within about 15% across two sweeps (GPU 0.032 vs 0.027 ms per 1000); GPU time at light load is inflated and not monotonic, so the fit supports `fit_min_n`; main-thread time has no signal for this feature; `ProfilerRecorder` resets at capacity and its first sample is partial (handled).
+- Not verified: per-pass GPU time, player build, any other machine, a real feature. The drift warning is noisy (baseline is an idle point).
+- Trial 001 protocol written (`docs/trials/001-rendering-feature.md`); not started.
+
+### 2026-10-12 — Spike 002 run (Play Mode profiler harness) + housekeeping
+- Branch `spike/002-profiler-harness`. Harness under `Assets/Kit/Spike/Perf/` (workload + `ProfilerMarker`, PlayMode test with `ProfilerRecorder`, OFF vs ON, p50/p95, `Perf/spike-002/result.json`). Results, friction and proposals in `docs/spikes/002-profiler-harness.md`.
+- Gate: PlayMode 1/1, EditMode canary 3/3, 0 console errors, 0 warnings. Code compiled without edits; the one failure (sample count 30 vs 120) was my buffer assumption, fixed by starting the recorders after warmup.
+- Findings: the custom marker is readable by name (in a test and through `get_counters`); `ProfilerRecorder` works with the Profiler off; Editor noise on the marker p50 is about 15% min to max over 5 runs; main-thread time is frame-capped and not a cost metric; whole-frame GC has a 21 KB Editor floor; `manage_editor play` stalls while the Editor is unfocused, use `run_tests`.
+- Housekeeping: unity-mcp pinned to `#v10.3.0` (same commit as before, canary passes). Friction #3 (file rewrite) NOT investigated.
+- Not done: GPU time, player-build numbers, a render feature. `Perf/` results are not committed (decision pending).
+- Left uncommitted on purpose: Editor-made changes (`Mobile_RPAsset.asset` URP upgrade, `EditorSettings.asset` EnterPlayModeOptions 0 to 1, `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset`, `SceneTemplateSettings.json`). Review them with the human.
 ### 2026-10-11 — style guides confirmed (Claude Code)
 - Alexandros answered the open items on branch `docs/style-guides-confirmed`: methods take at most 3 parameters (becomes KIT005 when built); expected runtime failures return a result enum, exceptions only for programmer errors; MonoBehaviour is a thin adapter; shaders target desktop with hand-written HLSL (no Shader Graph, no mobile budget yet). Guides marked v1; `(confirm)` tags removed. Docs only, `unity-check` not run.
 
