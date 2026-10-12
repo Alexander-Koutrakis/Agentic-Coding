@@ -20,15 +20,18 @@ namespace Kit.Grass.Tests
         const string Feature = "grass";
         const int Seed = 12345;
         const int Repeats = 3;
-        const int FullCount = 100000;
+        const int MillionCount = 1000000;
+        const float GroundVisibleLimit = 0.6f; // the culler must keep less than this share of the blades in the ground pose
+        const int GroundCheckMinCount = 20000;
         const float BaselineTolerance = 0.15f;
         const string ScenePath = "Assets/Kit/Grass/GrassReference.unity";
         const string RendererPath = "Assets/Settings/PC_Renderer.asset";
         const string Marker = "Kit.Grass.Draw";
 
-        static readonly int[] SweepPoints = { 1000, 3000, 6000, 10000, 50000, 100000 };
+        static readonly int[] SweepPoints = { 20000, 40000, 80000, 160000, 320000, 640000, MillionCount };
         static readonly Pose WholePose = new Pose(new Vector3(0f, 45f, -50f), Quaternion.Euler(42f, 0f, 0f));
-        static readonly Pose HalfPose = new Pose(new Vector3(0f, 8f, -12f), Quaternion.Euler(30f, 0f, 0f));
+        // Ground view: inside the 50 x 50 patch (z from -25 to 25), level, looking along +z. Blades behind and beside are culled.
+        static readonly Pose GroundPose = new Pose(new Vector3(0f, 1.5f, -12f), Quaternion.identity);
 
         readonly List<RunInfo> infos = new List<RunInfo>();
         GrassFeature feature;
@@ -45,14 +48,30 @@ namespace Kit.Grass.Tests
         public IEnumerator Smoke_OnePoint()
         {
             yield return LoadScene();
-            yield return RunPoints(new[] { 1000 }, WholePose, "sweep");
+            yield return RunPoints(new[] { 20000 }, GroundPose, "sweep");
 
             Assert.AreEqual(1, infos.Count);
             LogAndCheck(infos[0]);
             Debug.Log("resolution " + infos[0].resolution + " scene " + SceneManager.GetActiveScene().name);
         }
 
-        // The full sweep: baseline N = 0 first and last, 3 shuffled repeats in between, then the half view and the OFF run.
+        // One run at a million blades from the ground pose: proves the count is accepted and reports the buffer memory.
+        [UnityTest, Timeout(300000)]
+        public IEnumerator Check_OneMillion()
+        {
+            yield return LoadScene();
+            yield return RunPoints(new[] { MillionCount }, GroundPose, "sweep");
+
+            Assert.AreEqual(1, infos.Count);
+            LogAndCheck(infos[0]);
+            GrassCuller culler = feature.Culler;
+            long bytes = (long)(culler.Blades.count * culler.Blades.stride) + (long)(culler.Visible.count * culler.Visible.stride)
+                + (long)(culler.Args.count * culler.Args.stride);
+            Debug.Log("buffers at " + feature.BladeCount + " blades: " + bytes + " bytes (" + (bytes / (1024.0 * 1024.0)).ToString("F1") + " MiB)");
+        }
+
+        // The full sweep: baseline N = 0 first and last, 3 shuffled repeats in between (ground pose, the fit reads these),
+        // then one whole-patch run per point and the OFF run at a million blades.
         [UnityTest, Timeout(3600000)]
         public IEnumerator Sweep_Grass()
         {
@@ -65,14 +84,14 @@ namespace Kit.Grass.Tests
             points.Insert(0, 0);
             points.Add(0);
 
-            yield return RunPoints(points.ToArray(), WholePose, "sweep");
-            yield return RunPoints(new[] { FullCount }, HalfPose, "cull-half");
+            yield return RunPoints(points.ToArray(), GroundPose, "sweep");
+            yield return RunPoints(SweepPoints, WholePose, "whole");
 
             bool wasActive = feature.isActive;
             feature.SetActive(false);
             try
             {
-                yield return RunPoints(new[] { FullCount }, WholePose, "off");
+                yield return RunPoints(new[] { MillionCount }, GroundPose, "off");
             }
             finally
             {
@@ -81,7 +100,7 @@ namespace Kit.Grass.Tests
 
             foreach (RunInfo info in infos)
                 LogAndCheck(info);
-            Assert.AreEqual(points.Count + 2, infos.Count);
+            Assert.AreEqual(points.Count + SweepPoints.Length + 1, infos.Count);
 
             double first = Gpu(infos[0]);
             double last = Gpu(infos[points.Count - 1]);
@@ -121,6 +140,9 @@ namespace Kit.Grass.Tests
             for (int i = 0; i < points.Length; i++)
             {
                 SetCount(points[i]);
+                for (int w = 0; w < 3; w++)
+                    yield return null; // let the cull pass run on the new count before reading it back
+                string notes = feature.isActive ? "visible=" + CheckVisible(points[i], pose) : "feature=off";
                 var cfg = new PerfRunConfig
                 {
                     Feature = Feature,
@@ -130,6 +152,7 @@ namespace Kit.Grass.Tests
                     SweepValue = points[i],
                     Seed = Seed,
                     FeatureMarker = Marker,
+                    Notes = notes,
                 };
 
                 PerfRunResult result = null;
@@ -144,6 +167,21 @@ namespace Kit.Grass.Tests
         {
             feature.SetBladeCount(count);
             Assert.AreEqual(count, feature.BladeCount);
+        }
+
+        // Test-only readback of the instance count the cull pass wrote into the draw args.
+        int CheckVisible(int count, Pose pose)
+        {
+            var args = new uint[5];
+            feature.Culler.Args.GetData(args);
+            int visible = (int)args[1];
+            Debug.Log("visible " + visible + " of " + count + " at " + pose.position);
+            Assert.LessOrEqual(visible, count, "visible exceeds the blade count");
+            if (count == 0)
+                Assert.AreEqual(0, visible, "N = 0 must keep nothing");
+            if (pose.Equals(GroundPose) && count >= GroundCheckMinCount)
+                Assert.Less(visible, count * GroundVisibleLimit, "ground pose keeps too many blades at N=" + count);
+            return visible;
         }
 
         void SetPose(Pose pose)
