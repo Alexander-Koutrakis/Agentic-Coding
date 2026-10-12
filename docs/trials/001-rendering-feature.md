@@ -37,10 +37,13 @@ Feature: GPU-instanced grass as a URP renderer feature. Brief `docs/features/gra
 Tokens: main-session stages show `n/a`: the session's token counter resets every turn, so only subagent usage (reported by the Agent tool) is exact.
 
 ### Seeded flaw
-(filled at stage 3; do not tell the reviewers)
+Planted 2026-10-12 in a copy of the plan (scratchpad `plan-under-review.md`, reviewers never saw the real file): the `GrassPass` row of the Data table says that each frame the pass filters batches with `batches.Where(b => b.count > 0).ToList()`. That is LINQ plus a list allocation every frame, a violation of `csharp-performance` (no LINQ, no per-frame allocation) and of the brief (no per-frame allocation). Expected catcher: the performance and GC lens; the architecture lens may also notice. Result: FOUND by both reviewers, each as a critical finding and a veto (performance lens finding 1, architecture lens finding 1), both quoting the `Where(...).ToList()` text and its contradiction with the Approach line. The real plan never contained it, so nothing was removed from it.
 
 ### Ledger
 | # | Stage / role | Agent / session | Files loaded | Output file | Tokens | Wall time | Evidence |
 |---|---|---|---|---|---|---|---|
 | 1 | Architect | main session (Claude Sonnet 5.5) | `skills/roles/architect/SKILL.md`, `templates/feature.md`, plan §4.6, `docs/trials/001-rendering-feature.md` | `docs/features/grass/feature.md` | n/a | 19:30 to 19:45 incl. human answers | `PASS docs: 1 files`; approved 2026-10-12 |
 | 2 | Director | main session | `skills/roles/director/SKILL.md`, `templates/implementation-plan.md`, `templates/task-card.md`, `skills/style/csharp-architecture.md`, `minimal-code.md`, `csharp-performance.md`, plan §4.4, perf skill, toy feature and sweep test | `docs/features/grass/implementation-plan.md`, `docs/tasks/004` to `007` | n/a | 19:45 to 19:48 (3 docs_check fix rounds) | `PASS docs: 5 files`; friction T1-1 to T1-3 |
+| 3 | Plan reviewer, lens architecture-style | subagent a5cda75d0f6ff7e7 (general-purpose, fresh) | role file, `csharp-architecture.md`, brief, plan copy with the seeded flaw | review in plan `## Review` table | 63,248 | 33 s | report opened with the role line; veto: seeded flaw + 5 major, 2 minor |
+| 4 | Plan reviewer, lens performance | subagent ad6afd0b1cfcf5c6a (general-purpose, fresh) | role file, `csharp-performance.md`, brief, plan copy with the seeded flaw | review in plan `## Review` table | 60,648 | 18 s | report opened with the role line; veto: seeded flaw + 4 major, 3 minor |
+| 4b | Director fixes after review | main session | both reports | plan and cards 004, 005, 007 updated | n/a | 19:50 to 19:55 | `PASS docs: 5 files` |

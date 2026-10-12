@@ -22,7 +22,7 @@ tests: may-not-change
 
 ## Steps
 1. Create `Assets/Kit/Grass/Runtime/Kit.Grass.asmdef` (references: none yet) and `Tests/EditMode/Kit.Grass.Tests.EditMode.asmdef` (copy the shape of `Kit.Spike.Tests.EditMode`).
-2. Write `GrassFieldCreateInfo` (`seed`, `bladeCount`, `patchSize`, `patchCenter`, `minScale`, `maxScale`), `GrassBatch` (`Matrix4x4[] matrices`, `int count`) and `GrassField` per the plan's data table. `GrassField.Create(in GrassFieldCreateInfo)` validates (bladeCount >= 0, patchSize > 0, 0 < minScale <= maxScale) and throws on bad input; `Dispose()` releases the batches.
+2. Write `GrassFieldCreateInfo` (`seed`, `bladeCount`, `patchSize`, `patchCenter`, `minScale`, `maxScale`), `GrassBatch` (sealed class: `Matrix4x4[] matrices`, `int count`) and `GrassField` per the plan's data table. `GrassField.Create(in GrassFieldCreateInfo)` validates (bladeCount >= 0, patchSize > 0, 0 < minScale <= maxScale) and throws on bad input; builds only non-empty batches; no `Dispose` (managed arrays only).
 3. Each blade: position uniform over the patch at `patchCenter.y`, rotation random about the up axis only, uniform scale in `[minScale, maxScale]`, built with `Matrix4x4.TRS`. One `System.Random(seed)`; the blade sequence depends only on seed, so N blades are a prefix of N+1 blades.
 4. EditMode tests: same seed and N give identical matrices; different seed differs; total of `batch.count` equals N; every batch has at most 1023; N = 0 gives no batches; all positions inside the patch and at `patchCenter.y`; scales inside the range; bad `CreateInfo` throws.
 5. Follow `unity-wait-ready` then `unity-check` and paste its PASS line. Run scope_check against this card.

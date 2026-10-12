@@ -22,9 +22,10 @@ tests: may-not-change
 1. Read `skills/unity/unity-perf-harness/SKILL.md` and copy the shape of `ToyInstancesSweepTests`. Do not edit `Kit.Perf`.
 2. Write `Kit.Grass.Tests.PlayMode.asmdef` (references `Kit.Grass`, `Kit.Perf`, test runner, nunit, like `Kit.Perf.Tests.PlayMode`).
 3. Test: load `GrassReference` in Play Mode (`EditorSceneManager.LoadSceneInPlayMode`, Editor guard), find the `GrassFeature` on the active renderer, set the count per point through `SetBladeCount` before warmup, label `sweep-n<N>-i<index>`, points 1000, 3000, 6000, 10000, 50000, 100000, baseline 0 first and last, 3 repeats shuffled with a fixed seed, `FeatureMarker = Kit.Grass.Draw`, feature name `grass`, seed 12345.
-4. An OFF run: one extra point set with the feature disabled (`SetActive(false)`), restored in `finally`. After the test the renderer asset must show no change in `git status`.
-5. `Perf/grass/feature.json`: sweep points, `fit_min_n` 10000, primary metric `gpu_ms`, budgets `gpu_ms per_1000 <= 0.05` and `gpu_ms total_at 100000 <= 3.0`.
-6. Follow `unity-wait-ready` then `unity-check`; paste PASS. Do NOT run the full sweep.
+4. Fail the test if `gpu_valid` is false or the two N = 0 runs differ by more than 15% in `gpu_ms`. Report `Screen.width x height` from `run.json`; if it is not 1920x1080 and cannot be forced under `run_tests`, stop and ask the human. `SetBladeCount` is called only before warmup. After accepting the first sweep, record it as the baseline (human confirms).
+5. An OFF run: one extra point set with the feature disabled (`SetActive(false)`), restored in `finally`. After the test the renderer asset must show no change in `git status`.
+6. `Perf/grass/feature.json`: sweep points, `fit_min_n` 10000, primary metric `gpu_ms`, budgets `gpu_ms per_1000 <= 0.05` and `gpu_ms total_at 100000 <= 3.0`.
+7. Follow `unity-wait-ready` then `unity-check`; paste PASS. Do NOT run the full sweep.
 
 ## Acceptance
 - [ ] `unity-check` PASS line
