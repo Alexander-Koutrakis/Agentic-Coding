@@ -84,6 +84,8 @@ Brief acceptance coverage:
 - The blade mesh (already imported by the human) may have a wrong scale or pivot, and its triangle count decides the vertex cost at 100k instances (100 triangles per blade would be 10M) → T5 inspects it, reports vertex and triangle counts, and the human agrees a cap or accepts the number before T6 runs; scale and pivot are fixed through the import settings in the Editor.
 - The append counter must be reset every frame or the draw count accumulates → `GrassCuller.Record` does `SetCounterValue(0)`; the T4 readback test runs at least two consecutive frames with different poses.
 
+Built differently from the plan (code review, 2026-10-12): `DrawMeshInstancedIndirect` on the command buffer takes no bounds, so the "bounds cover the patch" item is moot; `GrassCullerCreateInfo` also has `indexCount`; markers are `ProfilingSampler`s named `Kit.Grass.Cull` and `Kit.Grass.Draw` (recordable by the harness).
+
 ## Review
 | Reviewer lens | Verdict (pass / changes / veto) | Findings |
 |---|---|---|
