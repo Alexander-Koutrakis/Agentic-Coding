@@ -10,7 +10,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
 - Feature pipeline (plan §4.6, D15-D20): role skills, style guides v1, templates, `scripts/core/docs_check.py`. **Run end to end once: Trial 001 (grass), branch `trial/001-grass`, not merged, not pushed** (see the top log entry and `docs/trials/001-rendering-feature.md`).
 - Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
-- **Trial 001 done, awaiting the human's decisions:** grass as a URP renderer feature with GPU frustum culling (compute shader + indirect draw), 22 commits on `trial/001-grass`. Feature in `Assets/Kit/Grass/`, brief/plan/cards/perf result in `docs/features/grass/` and `docs/tasks/004-011`.
+- **Trial 001 done (human keeps the pipeline as is, D25); open follow-ups below:** grass as a URP renderer feature with GPU frustum culling (compute shader + indirect draw), 22 commits on `trial/001-grass`. Feature in `Assets/Kit/Grass/`, brief/plan/cards/perf result in `docs/features/grass/` and `docs/tasks/004-011`.
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
 
 ## Next step
@@ -32,6 +32,7 @@ Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, 
 - Final gates on the branch: `just check` 227 passed; unity-check `PASS 18/18 EditMode + 6/6 PlayMode readback + Smoke_OnePoint, format 16 files, assets ok (85 assets, 85 .meta), scope: no card, code-rules ok, 0 errors, 0 warnings`. The full `Sweep_Grass` was not re-run after the last fix commit.
 - Human decisions during the trial: tier medium, no tint, budget 0.05 ms per 1000 and 3 ms at 100k, patch 50 x 50 m, scene component cut, GPU culling with shaders allowed, sweep run confirmed.
 - Later the same day, at the human's request: sweep raised to 20k doubling to 640k then 1M, from a ground-level camera (card 012, commit 8916ef3). Result: linear 0.0022 ms per 1000 blades placed, 2.686 ms at 1M (500,099 visible, culler keeps ~50%), vs 4.357 ms with the whole patch in view: culling gain now visible (`perf-result.md`). No total budget for 1M has been set (human to give one). Not run again after this: the full unity-check EditMode gate (the final gate above predates card 012; PlayMode 8/8 passed in the coder's run).
+- Review with the human after the trial: the human keeps the kit as is (D25). Plan updated (decisions D25 and D26, Trial 001 result under §4.6, open questions). Baseline accepted (`Perf/grass/baseline.json`). Open: control run with a plain prompt, shader screenshot check, friction fixes.
 - Three `ProjectSettings/*.asset` files stay modified (line endings only, made by Unity); not committed.
 
 ### 2026-10-12 (unity-check on merged main) — PASS
