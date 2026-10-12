@@ -46,6 +46,8 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 | D22 | 2026-10-12 | **Editor GPU numbers are relative-only** (Editor Profiler GPU module). Good enough to compare ON vs OFF and slopes on one machine; real numbers need a development player build (later). | Spike 002: Editor numbers are noisy (marker p50 spread ~15%) and frame-capped unless vsync is off. |
 | D23 | 2026-10-12 | **Harness split:** a C# runner (Play Mode test) only collects raw per-frame samples and writes files; a **Python script** reads them and does medians, p95, regression and the budget check. | Python reading files never touches the bridge, so D11 allows it. The math is testable without Unity. |
 | D24 | 2026-10-12 | Spikes 002 and 003 merged into `main`. `Assets/Kit/Perf` (`Kit.Perf` library, `Kit.Perf.Toy`, sweep tests) stays in the test project as the **perf canary**: the known-good reference for `unity-perf-harness` and `perf_analyze.py`. `just check` is the shell-side gate; Unity stays with `unity-check`. | Same reasoning as D12: the harness needs a fixture that must always run. |
+| D25 | 2026-10-12 | **Keep the feature pipeline as it is** after Trial 001 (human decision, 2026-10-12): the structure stays, the friction list drives improvements. | Trial 001 showed the evidence-producing parts (plan review, code review, readback test, perf harness) earn their cost; the cost and the console-only shader gate are the weak parts. |
+| D26 | 2026-10-12 | **Shaders in Trial 001 were allowed by the human** (GPU culling needs a compute shader and an indirect-draw shader) although the shader gate does not exist; the baseline for a feature is stored as `Perf/<feature>/baseline.json` (accepted by the human, no script reads it yet). | The first graphics feature needed both; the gate and baseline comparison remain to build. |
 | D5 | 2026-10-10 | **Unity: no parallel sandboxes.** One open Editor is the single source of truth, driven through an MCP bridge. Agents work **one task at a time**, in sequence, on the same checkout; the next task starts only after the current one is verified. Slot pool / Accelerator / Dev Drive ideas are parked. | Parallel Unity environments are a lot of work and may perform poorly. Serial work on one live editor is simpler and keeps one truth. |
 
 ## 4. Architecture (draft)
@@ -201,6 +203,8 @@ Architect and Director need not be separate agents (Director may be the Architec
 
 **Measure before adding.** Run one real medium feature through the minimal pipeline (templates, format script, one plan reviewer, coders, gate) and record tokens and time per stage. Add reviewers and roles only where plan review is seen catching real problems.
 
+**Result of Trial 001 (grass, 2026-10-12, D25).** Ran with 2 plan reviewers x 2 rounds, 8 coders, a perf runner and one code reviewer, about 1.5M subagent tokens (`docs/trials/001-rendering-feature.md`). What paid for itself: plan review (caught the seeded per-frame allocation and real design errors: counter reset, cull sphere, ownership), the code reviewer (leaks, shared test state, a misstated perf number), the readback test and the perf harness. What did not: the console-only shader gate (black blades reached the screenshots), hand-assembled PASS lines, `unity-wait-ready` for subagents. No control run with a plain prompt exists. Proposed trims, not yet applied: skip separate Architect/Director agents on a medium feature, merge tiny tasks into one coder, repeat plan review only when scope changes. Friction rows T1-1 to T1-18 in `logs/friction-log.md`; the repeated ones come first (wait-ready for subagents, scope base default, one gate runner).
+
 ### 4.3 Shared core
 Single gate command per project (`check`), progress/handoff protocol, task cards, friction log,
 review pack (repo zip for a bigger model), approval list.
@@ -228,6 +232,8 @@ review pack (repo zip for a bigger model), approval list.
 - [ ] Test project: brand-new small Unity project, or a copy of a real one?
 - [ ] Distribution of the kit into target projects: Claude Code plugin, git submodule, or copy script?
 - [ ] Sample projects for testing the kit (small Unity project, small Vulkan renderer).
-- [ ] Which medium feature is the first end-to-end pipeline run (ideally a small graphics feature, so the perf harness and shader gate are exercised).
+- [x] Which medium feature is the first end-to-end pipeline run → grass (URP renderer feature with GPU culling), Trial 001, D25.
+- [ ] Shader gate: Trial 001 shows console-only is not enough (black blades); add a fixed-camera screenshot check for new shaders before the visual gate in the ladder.
+- [ ] Control run: same feature with a plain prompt and no kit, to measure what the pipeline buys.
 - [ ] Is the Ponytail ladder really cheaper on our tasks? Compare tokens with and without on one task before keeping it everywhere.
 - [ ] Shader gate: how to read shader compile errors and warnings through the bridge.
