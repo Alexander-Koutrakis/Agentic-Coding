@@ -10,7 +10,7 @@ A task card with `Coder: csharp` and an approved plan. One card per run.
 
 ## Inputs & access
 - The task card and its plan row. Read the whole plan only if the card is unclear.
-- Style: `skills/style/csharp-architecture.md` and `minimal-code.md`; also `csharp-performance.md` when `Profile: hot-path`.
+- Style, in `${CLAUDE_PLUGIN_ROOT}/skills/style/`: `csharp-architecture.md` and `minimal-code.md`; also `csharp-performance.md` when `Profile: hot-path`.
 - Skills: `unity-wait-ready`, `unity-check`. CLAUDE.md rules for Unity apply.
 - Write only inside the card's `scope` block.
 

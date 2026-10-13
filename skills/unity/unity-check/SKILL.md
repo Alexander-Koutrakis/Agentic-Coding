@@ -11,7 +11,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 ## Inputs & access
 - The Unity project path, relative to the repo root (test project: `Test Environments/Unity Agentic Kit test`).
 - The task card, `docs/tasks/<NNN-name>.md`, for the scope gate. If there is no card (for example a check on `main`), the scope gate does not run and the result line says `scope: no card`.
-- Python scripts in `scripts/unity/` (run from the repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
+- Python scripts in `${CLAUDE_PLUGIN_ROOT}/scripts/unity/` (run from the project's repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
 - Skill `unity-wait-ready` (step 1 below).
 - UnityMCP tools `read_console`, `run_tests`, `get_test_job`.
 - The test assemblies to run. Default: every assembly you added or touched; if unsure, run all of EditMode.
@@ -29,7 +29,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    - Exit 2 (`ERROR ...`, a bad path, missing tool, unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
    - Exit 0: it prints `PASS file-gates: ... base <sha>` and saves it. Do not retype it: step 8 composes the final line from it.
    - No task card (for example a check on `main`): run `run` without `begin`. The line says `scope: no card`.
-   - Single gates still work on their own (`scripts/unity/format_check.py`, `asset_check.py`, `scope_check.py`, `code_rules.py`; same `--project`, optional `--base`), for example to re-check one gate while fixing it.
+   - Single gates still work on their own (`${CLAUDE_PLUGIN_ROOT}/scripts/unity/format_check.py`, `asset_check.py`, `scope_check.py`, `code_rules.py`; same `--project`, optional `--base`), for example to re-check one gate while fixing it.
    - **format:** changed `.cs` files under `Assets/` vs the project's `.editorconfig`. Fix the file; never reformat files the task did not touch.
    - **assets:** `.meta` pairs, orphans, GUIDs on disk; `.meta` staged/committed together with its asset. Never write a `.meta` by hand: fix it through the Editor (refresh) or ask.
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.
@@ -52,7 +52,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 - `file_gates.py finish` printed a `PASS` line (file gates current, zero console errors, job `status` is `succeeded`, `completed == total`, total above 0).
 - If `total` is 0, that is FAIL: the assembly name is wrong or the tests did not compile (`finish` rejects it).
 - Known-good reference (Spike 001): `Kit.Spike.Tests.EditMode` = 3 tests, all pass; a broken assertion shows as `Expected: 6.0d +/- 9.99e-06d But was: 5.0d`.
-- The scripts have their own tests: `uv run --no-project --with pytest pytest scripts/unity/tests -q`.
+- The scripts have their own tests: `uv run --no-project --with pytest pytest "${CLAUDE_PLUGIN_ROOT}/scripts/unity/tests" -q`.
 
 ## What to return
 One line, then evidence:

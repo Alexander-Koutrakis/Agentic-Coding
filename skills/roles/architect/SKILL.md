@@ -10,17 +10,17 @@ The human brings a feature idea. Not for bug fixes or small tweaks (tier small g
 
 ## Inputs & access
 - The conversation with the human.
-- `templates/feature.md`, `docs/IMPLEMENTATION_PLAN.md` §4.6 (tiers). Read existing code only to name the systems it touches, never to design it.
+- `${CLAUDE_PLUGIN_ROOT}/templates/feature.md`, the tiers below. Read existing code only to name the systems it touches, never to design it.
 - Write access: `docs/features/<name>/feature.md` only. Do not edit source files.
 
 ## Steps
 1. Ask what the player or user gets and why. One question at a time, short. Do not suggest classes or code.
-2. Propose a tier (small / medium / large) after the first exchange; the human confirms. Small: stop and hand to a coder.
+2. Propose a tier after the first exchange; the human confirms. **Small:** a coder and the gate only; stop and hand over. **Medium:** short brief, plan, 1-2 plan reviewers, one code review. **Large:** full pipeline, more plan reviewers. Most features are medium.
 3. Name the systems involved and how they talk to each other. List what is out of scope.
 4. Get the constraints: platform, render pipeline, performance budget if graphics or per-frame work.
 5. Write acceptance as observable results a person or test can check.
-6. Fill `templates/feature.md`. List open questions with who decides.
-7. Run `uv run --no-project python scripts/core/docs_check.py docs/features/<name>/feature.md` and fix what it reports.
+6. Fill `${CLAUDE_PLUGIN_ROOT}/templates/feature.md`. List open questions with who decides.
+7. Run `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/core/docs_check.py" docs/features/<name>/feature.md` and fix what it reports.
 8. Ask the human to approve. Set `Status: approved <date>` only after they say so.
 
 ## How to validate

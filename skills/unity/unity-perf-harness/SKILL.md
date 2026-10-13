@@ -12,14 +12,14 @@ A graphics feature is done only when its harness runs and is within budget (plan
 - Agree with the human first and write it into `Perf/<feature>/feature.json`: the swept parameter and its points, the budget (`per_1000` and/or `total_at` a real in-game count), the reference scene, and `fit_min_n` if light loads are unreliable. Ask; do not invent a budget.
 - Library `Assets/Kit/Perf/Runtime` (`Kit.Perf`: `PerfRunner`, `PerfRunWriter`). Working reference: `Assets/Kit/Perf/Tests/PlayMode/ToyInstancesSweepTests.cs` and the toy feature in `Assets/Kit/Perf/Toy/`.
 - Skills `unity-wait-ready`, `unity-check`. UnityMCP `run_tests`, `get_test_job`, `read_console`.
-- Script `scripts/unity/perf_analyze.py` (Python, reads files only; never connects to the bridge).
+- Script `${CLAUDE_PLUGIN_ROOT}/scripts/unity/perf_analyze.py` (Python, reads files only; never connects to the bridge).
 
 ## Steps
 1. **Instrument the feature.** Wrap its CPU work in a `ProfilerMarker` (category `Scripts`) with a stable name. Pass that name as `PerfRunConfig.FeatureMarker`. (Per-pass GPU time via `ProfilingSampler` is not wired yet.)
 2. **Write the sweep test** in a PlayMode test assembly, copying `ToyInstancesSweepTests`: fixed camera, seed and resolution; the swept parameter set per point; baseline point (N = 0, feature on) first and last; the other points repeated 3 times in shuffled order; label `sweep-n<N>-i<index>`. Defaults: `WarmupFrames = 100`, `MeasuredFrames = 300`. Put at least 4 points in the loaded range (GPU time at light load is unreliable, see below). Mark long tests with `[Timeout]`.
 3. **Compile.** Run `unity-wait-ready`; fix console errors (`types=["error"]`).
 4. **Run the sweep through `run_tests`** (`mode="PlayMode"`, `assembly_names`, `test_names=[<the sweep test>]`, `init_timeout=120000`), then `get_test_job(wait_timeout=60)` until done. Never use `manage_editor play` for measurement: it stalls while the Editor is unfocused.
-5. **Analyze:** `python -I scripts/unity/perf_analyze.py Perf/<feature>` (add `--fit-min-n <N>` if the light-load points bend the fit). It analyzes the latest session, writes `Perf/<feature>/report.json`, prints a short summary and exits 0 (ok), 1 (a budget failed) or 2 (bad data).
+5. **Analyze:** `python -I "${CLAUDE_PLUGIN_ROOT}/scripts/unity/perf_analyze.py" Perf/<feature>` (add `--fit-min-n <N>` if the light-load points bend the fit). It analyzes the latest session, writes `Perf/<feature>/report.json`, prints a short summary and exits 0 (ok), 1 (a budget failed) or 2 (bad data).
 6. **Read the result critically** (see validate), then report.
 
 ## How to validate

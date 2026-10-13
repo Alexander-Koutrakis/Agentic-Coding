@@ -10,7 +10,7 @@ A task card with `Coder: shader` and an approved plan. One card per run.
 
 ## Inputs & access
 - The task card and its plan row.
-- Style: `skills/style/shader.md` and `minimal-code.md`. Skip the C# guides unless the card also touches C#.
+- Style, in `${CLAUDE_PLUGIN_ROOT}/skills/style/`: `shader.md` and `minimal-code.md`. Skip the C# guides unless the card also touches C#.
 - Skills: `unity-wait-ready`, `unity-check`. CLAUDE.md rules for Unity apply (shader files are text; materials and `.meta` only through the Editor).
 - Write only inside the card's `scope` block.
 
