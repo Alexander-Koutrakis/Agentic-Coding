@@ -1,93 +1,28 @@
 # HANDOFF
 
 Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of every session
-(newest entry on top, keep the "Current state" block current).
+(newest entry on top, keep "Current state" and "Next step" current).
 
 ## Current state
-- Phase: **1 — Verification (Unity)**. `main` (local, now including Trial 001) holds two lines of work merged on 2026-10-12 after they were developed on two machines: (a) Spike 001, Tasks 002 and 003, gate skills, folder rename to `Test Environments`, pipeline redesign (roles, style guides, templates, `docs_check.py`); (b) Spikes 002 and 003, the perf harness, `just check`, Editor-made settings. Not pushed.
-- The loop edit → refresh → wait → console → tests works through UnityMCP with no human relaying. `refresh_unity` does not wait for compile; the `unity-wait-ready` skill handles it.
-- Gate plumbing (D28, task 013, merged into `main` 2026-10-12 with `--no-ff`, `e73ff33`; not pushed; follow-up task 014 below): `scripts/unity/file_gates.py` (`begin`, `run`, `finish`) runs the file gates against one recorded base and composes the PASS line; `unity-wait-ready` has a fallback without a resource reader.
-- Gate ladder (plan §4.5): built = format, asset integrity (disk + git), scope, code rules (KIT001-004), analyzers, compile + console, EditMode tests. `unity-check` step 0 runs the four file gates (`scripts/unity/*.py`) before compiling. Frozen (D20).
-- Perf harness (plan §4.4, D21-D24): skill `skills/unity/unity-perf-harness`, `scripts/unity/perf_analyze.py` (+15 tests), perf library `Assets/Kit/Perf/` (`Kit.Perf`, toy feature, sweep tests) as the perf canary. `just check` runs the Python tests; Unity stays with `unity-check`.
-- Feature pipeline (plan §4.6, D15-D20): role skills, style guides v1, templates, `scripts/core/docs_check.py`. **Run end to end once: Trial 001 (grass), branch `trial/001-grass`, not merged, not pushed** (see the top log entry and `docs/trials/001-rendering-feature.md`).
-- Task cards live in `docs/tasks/`; each has a machine-readable `scope` block.
-- **Trial 001 done (human keeps the pipeline as is, D25); open follow-ups below:** grass as a URP renderer feature with GPU frustum culling (compute shader + indirect draw), 22 commits on `trial/001-grass`. Feature in `Assets/Kit/Grass/`, brief/plan/cards/perf result in `docs/features/grass/` and `docs/tasks/004-011`.
-- Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
+- Phase: **1 — Verification (Unity)**. The repo is the kit only: no Unity project inside (D32). It is a Claude Code plugin (`agentic-kit`, D31) plus `scripts/core/init_project.py` for target projects; `README.md` has the install steps.
+- Built and exercised on the old test project (tag `test-project-snapshot`): the loop edit → refresh → wait → console → tests through UnityMCP (`unity-wait-ready`, `unity-check`), the file gates (`scripts/unity/file_gates.py`: format, assets, scope, code rules; one recorded base per card, D28), the perf harness (`unity-perf-harness`, `perf_analyze.py`), and the feature pipeline (role skills, style guides, templates, `docs_check.py`; run end to end once, D25).
+- Git: `.gitattributes` (LF, UnityYAMLMerge, LFS for new binaries) with `setup_git.py` + `unity_merge.py` (D29); one branch per feature, one commit per task card (D30).
+- Script tests: `pytest scripts` (254 passed). Unity-side behaviour is checked only inside a real Unity project.
+- Not pushed: the human pushes (`main` and tag `test-project-snapshot`).
 
 ## Next step
-00. **Test project removed (D32, 2026-10-13, task 017):** the repo no longer contains a Unity project; it is in tag `test-project-snapshot`. Items 2-6 below that talk about grass, `Sweep_Grass`, `PC_Renderer.asset` or paths under `Test Environments/` are history, not work, until a Unity test project exists again. The human deletes the leftover folder `Test Environments/` on disk after closing Unity (it is untracked now). Next real step: create a Unity test project outside this repo, run `init_project.py` on it and the gate (`agentic-kit:unity-check`), then bring a canary fixture across if wanted.
-0. **Kit infrastructure (2026-10-13):** D29/D30 on `task/015-gitattributes-branching` (`3b54766`), plugin D31 on `task/016-plugin-spike` (built on 015, includes it). Human: (a) merge 016 (carries 015) into `main`; (b) set the user environment variable `CLAUDE_CODE_PLUGIN_DIRS` to the repo path and restart the Claude app, otherwise kit-repo sessions stop at the first line of `CLAUDE.md` (plugin not loaded); (c) run `python scripts/core/setup_git.py` once per other clone. Then: try the plugin on a real second Unity project (`init_project.py`, then the gate on it); the gates assume a branch named `main`.
-1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
-2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); friction proposals T1-8 to T1-12 are fixed (task 013, D28); the rest (T1-1 to T1-7, T1-13 to T1-18 in `logs/friction-log.md`) are open.
-3. `Sweep_Grass` drift check fails on `main` PlayMode (see the 2026-10-13 entry): human decides whether to change the check.
-4. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
-5. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
-6. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
+1. **Prove the kit on a real Unity project** (the human's): `init_project.py`, `setup_git.py`, then `agentic-kit:unity-check` on the clean tree. Expect rough edges: the gates assume a branch named `main`; `csharp-coder` loads but is missing from the model's skill listing; nothing was run with the plugin loaded against a live Editor yet. Fix what breaks, log repeats in `logs/friction-log.md`.
+2. Open friction items: T1-1 to T1-7 and T1-13 to T1-18 in `logs/friction-log.md` (rows about grass or paths in the old test project are history).
+3. Gate follow-ups: KIT005 (max 3 parameters); fail on `UNT` performance warnings in changed files only; new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL's `RoslynAnalyzer` label.
+4. Perf harness follow-ups: `perf_check.py` as a gate over `report.json`; loaded reference point for the drift check; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
+5. A canary fixture: `unity-check` and the perf harness have none until a small Unity test project exists again (outside this repo; the old one is in the tag).
+6. Open questions: reference machine for perf budgets; Ponytail ladder worth measured; kit for C++/Vulkan later (D8). See plan §6.
 7. Later: player-build numbers, visual gate (screenshot diff).
 
 ## Session log
-Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
 
-### 2026-10-13 (merge of 016, test project removed) — branch `task/017-remove-test-project`
-- Merged `task/016-plugin-spike` into `main` (`1deeaff`, `--no-ff`; includes 015). Tagged `test-project-snapshot` on that merge. Removed `Test Environments/` from git (`git rm --cached`, 177 files); the files stay on disk because the Editor has the project open. `.gitattributes` lost its two test-project overrides; `CLAUDE.md`, `unity-check` examples and the plan (D32) updated. `pytest scripts`: 254 passed. Uncommitted Unity edit to `PC_Renderer.asset` is left on disk only (not in the tag).
-
-### 2026-10-13 (plugin conversion finished) — branch `task/016-plugin-spike`
-- Converted: every kit path in the skills, roles and templates is `${CLAUDE_PLUGIN_ROOT}/...` (project paths like `docs/`, `logs/` stay relative); `CLAUDE.md` says to invoke skills by name and stops if they are not listed. New: `scripts/core/init_project.py` (+6 tests), `templates/project/` (CLAUDE.md, HANDOFF.md, friction-log.md). `pytest scripts`: 254 passed.
-- Loading: marketplace install copies the entire repo including `Test Environments/` into the cache, so dropped. `CLAUDE_CODE_PLUGIN_DIRS` as a real env var works (tested with `claude -p` in the kit repo and in a fresh `init`ed project); as a `settings.local.json` `env` entry it does not.
-- Not done: a real second Unity project; PlayMode and `unity-check` were not run (no Unity scripts or assets changed); a `justfile` for targets was not written (the kit's runs the kit's own tests).
-
-### 2026-10-13 (LFS/merge, branching, plugin spike) — branches `task/015-gitattributes-branching`, `task/016-plugin-spike`
-- 015 (`3b54766`): `.gitattributes` (LF on Unity YAML and text, UnityYAMLMerge, new binaries to LFS; the analyzer DLL and tutorial PNG stay plain blobs), `scripts/core/setup_git.py` (once per clone; `--check`), `unity_merge.py`. First driver version failed: git's temp merge files have no extension and UnityYAMLMerge needs it; the wrapper fixes that. Scratch-repo proof: two branches editing neighbouring lines of one scene object conflict in plain git, merge cleanly with the driver. `pytest scripts`: 248 passed (12 new). Branching rule D30 in `CLAUDE.md`, task-card template, coder roles and `unity-check`. Not seen yet: the three `ProjectSettings/*.asset` line-ending changes stopping (they were clean at the start); a real feature branch with several cards.
-- 016 (spike, not for merge as is): `.claude-plugin/plugin.json` and `unity-check` converted to `${CLAUDE_PLUGIN_ROOT}`. Headless `claude -p --plugin-dir` from a second project: skills `agentic-kit:*` found, paths substituted, `file_gates.py run` executed there (FAIL assets on a deliberately bad fake `.meta`, i.e. the gate really ran). Quirks: `csharp-coder` loads but did not appear in the model's skill listing; the gates assume a branch called `main`; a plugin cannot ship `CLAUDE.md` (validate warns about the kit's own).
-- `PC_Renderer.asset` still modified (not mine, not committed). A scratch project under the OS temp folder was left behind (a removal was blocked by the safety check).
-
-### 2026-10-13 (PlayMode on main) — not clean, 10/12
-- PlayMode on `main` (`3fce6bc`), `run_tests` mode PlayMode, 118.6 s: **10 passed, 2 failed**. Not part of the `unity-check` PASS line (that is EditMode).
-- `Kit.Grass.Tests.GrassPerfSweepTests.Sweep_Grass` failed on its drift check: `baseline N=0 gpu_ms drifted, Expected: 0.7506 +/- 0.1370, But was: 0.9134` (about 22% between the first and last N=0 run). All 45 runs finished with valid GPU timing; 1M blades gave about 1.14-1.34 ms median. Read as the known noisy drift check (plan §4.4 Open: the N=0 point drifts 27-90% here), not a grass regression; not investigated further and run once only.
-- `Kit.Perf.Tests.ToyInstancesSweepTests.Probe_FrameTimingAvailable` failed once with an unhandled Editor log (`GUI Error: Invalid GUILayout state in GameView`, from the Game view stats overlay), then passed alone on a re-run (1/1, 5.7 s). Treated as Editor noise.
-- The other 10 passed (grass readback tests, `Smoke_OnePoint`, `Sweep_ToyInstances`, spike canary tests). No test or code was changed.
-- Open for the human: whether to loosen or rework the `Sweep_Grass` drift check (a test change, needs approval). Spike 003 already proposed a loaded reference point for the drift check.
-
-### 2026-10-12 (task 014: stale task base) — branch `task/014-task-base-stale`
-- unity-check on merged `main` (`9d99075`): `PASS 18/18 EditMode (all assemblies), format ok (0 files), assets ok (85 assets, 85 .meta, 0 changed in git), scope: no card, code-rules ok (0 files, 0 new violations, 0 suppressed), analyzer warnings 0, 0 errors, 0 warnings`. Compile and reload waited with the resource; the MCP link dropped for about a minute after the test run started and came back by itself. PlayMode and `Sweep_Grass` not run.
-- Wart found there: the base recorded for task 013 stayed in `.agent/task-base`, so `run` on `main` would have used card 013. Fix: `begin` now also records the branch; `read_task_base` ignores a record made on another branch (new test; scripts tests 179 passed, `just check` is the full run). `unity-check` skill text updated.
-
-### 2026-10-12 (task 013: gate plumbing) — branch `task/013-gate-plumbing`
-- At the human's request: shader gate, 1M budget and control run declared out of scope (D27) and removed from plan and handoff. Fixed friction T1-8 to T1-12 (D28).
-- One base: `--base`, else the rev recorded by `file_gates.py begin`, else `main`, for all four gates. One command: `file_gates.py run`; `finish` composes the PASS line and refuses stale file gates (files changed after `run`) or inconsistent Editor results. `unity-wait-ready` Fallback: an `execute_code` probe (compile flags plus an AppDomain marker that shows a reload); tried live: after a forced refresh the probe returned `compiling false, fresh true`. Skills `unity-check`, `unity-wait-ready`, csharp-coder and shader-coder updated.
-- Evidence: `just check` 238 passed (11 new in `tests/test_file_gates.py`); EditMode 18/18 passed, 0 console errors, 0 warnings. Not tested: a subagent actually using the fallback; PlayMode.
-- The three `ProjectSettings/*.asset` line-ending changes stay uncommitted (git does not list them in the diff, so the scope gate ignores them).
-
-### 2026-10-12 (merge of Trial 001) — `trial/001-grass` merged into local `main`
-- Merged by the human's request with `git merge --no-ff` (`edfac24`). Not pushed: `main` is ahead of `origin/main`. Branch `trial/001-grass` kept, not deleted.
-- unity-check on merged `main`: `PASS 18/18 EditMode + 7/7 PlayMode (Kit.Grass.Tests.GrassCullReadbackTests 6 + GrassPerfSweepTests.Smoke_OnePoint), format/assets/code-rules ok (assets 85/85 .meta), scope: no card, 0 errors, 0 warnings`; editor state `ready_for_tools` true after the compile. The full `Sweep_Grass` was not re-run on `main`. Tree is identical to the branch tip (`git diff` empty).
-- Three `ProjectSettings/*.asset` files still show line-ending-only changes from Unity, uncommitted.
-
-### 2026-10-12 (Trial 001: grass, full pipeline) — branch `trial/001-grass`
-- Ran Architect, Director (two plan revisions), 2 plan reviewers x2 rounds, 6 coders + 2 fix coders, perf harness runner and code reviewer, each as a fresh subagent. Ledger with tokens and times: `docs/trials/001-rendering-feature.md`. Subagent tokens about 1.28M in total (main session not countable).
-- Result: feature builds and renders; culling counts proven by GPU readback (10000 / 0 / 5033 of 10000). Perf: gpu 0.791 ms at 100k blades (budget 3.0), about 0.004 ms per 1000 (budget 0.05), feature adds about 0.43 ms at 100k vs OFF; **no culling gain visible in GPU time** (`docs/features/grass/perf-result.md`).
-- Seeded flaw (LINQ and a list per frame in the pass): found by both plan reviewers as critical.
-- Escapes: black blades from back-face lighting (found at T5 screenshots, fixed in card 010); code review found 6 majors the plan review missed (leaks on partial failure, shared test fixture, buffers not released on disable, perf test cannot show gain, perf headline understated).
-- Final gates on the branch: `just check` 227 passed; unity-check `PASS 18/18 EditMode + 6/6 PlayMode readback + Smoke_OnePoint, format 16 files, assets ok (85 assets, 85 .meta), scope: no card, code-rules ok, 0 errors, 0 warnings`. The full `Sweep_Grass` was not re-run after the last fix commit.
-- Human decisions during the trial: tier medium, no tint, budget 0.05 ms per 1000 and 3 ms at 100k, patch 50 x 50 m, scene component cut, GPU culling with shaders allowed, sweep run confirmed.
-- Later the same day, at the human's request: sweep raised to 20k doubling to 640k then 1M, from a ground-level camera (card 012, commit 8916ef3). Result: linear 0.0022 ms per 1000 blades placed, 2.686 ms at 1M (500,099 visible, culler keeps ~50%), vs 4.357 ms with the whole patch in view: culling gain now visible (`perf-result.md`). A 1M budget is out of scope (D27). Not run again after this: the full unity-check EditMode gate (the final gate above predates card 012; PlayMode 8/8 passed in the coder's run).
-- Review with the human after the trial: the human keeps the kit as is (D25). Plan updated (decisions D25 and D26, Trial 001 result under §4.6, open questions). Baseline accepted (`Perf/grass/baseline.json`). Out of scope (D27): control run, shader gate, 1M budget. Open: friction fixes.
-- Three `ProjectSettings/*.asset` files stay modified (line endings only, made by Unity); not committed.
-
-### 2026-10-12 (unity-check on merged main) — PASS
-- `PASS 3/3 EditMode (Kit.Spike.Tests.EditMode), format 0 files, assets ok (55 assets, 55 .meta), scope: no card, code-rules ok (0 new violations), analyzers on, 0 errors, 0 warnings`, on `main` at `c2718c1`. Compile 0.5 s, reload 5.4 s.
-- Extra, not part of the gate: PlayMode 3/3 in 36.6 s (perf canary, includes `SpikeWorkloadPerfTests.Marker_OnVsOff_IsReadableByName`). `just check`: 15 tests OK; pytest over `scripts/`: 227 passed.
-- Not run: the full `Kit.Perf` sweep (needs sweep points and budget agreed first).
-- `just check` now runs pytest over `scripts/` (227 passed, about 70 s), so it covers the pipeline and gate suites too. `just` 1.58.0 installed via winget on this PC; justfile sets `windows-shell` to PowerShell because there is no `sh`.
-- HANDOFF trimmed: older log entries moved to `docs/archive/HANDOFF-log-2026-10.md`.
-
-### 2026-10-12 (merge) — reconciled two machines
-- Alexandros developed on two machines without pulling: `origin/main` (Spikes 002/003, perf harness, 7 commits, still under the old path `Test Enviroments`) and local `main` (Tasks 002/003, rename to `Test Environments`, pipeline redesign, 20 commits). Merged `origin/main` into local `main`; harness files moved to `Test Environments/`.
-- Decision numbering collided (both used D14-D17). Kept the pipeline numbers (D14-D20, dated 2026-10-11) and renumbered the perf-harness decisions to **D21-D24**; references updated in the plan, spike 003, `perf_analyze.py`, the perf skill and `PerfTypes.cs`. Entries below that say D14-D17 for the harness mean D21-D24.
-- Stale `Test Enviroments` path in harness-side docs (spike 002/003, trial 001, old log entries) is historical; fixed where it was a live reference.
-
-### 2026-10-12 (end) — spike branches merged into main, cleaned up
-- Then: spike branches `spike/002-...` and `spike/003-...` deleted (`git branch -d`, merged). The Editor-made settings were committed (`781ed5d`): `Mobile_RPAsset.asset` (URP upgrade 12 to 13), `EditorSettings.asset` (`m_EnterPlayModeOptions` 0 to 1, origin unknown), new `SceneTemplateSettings.json`. `ProjectSettings.asset`, `ShaderGraphSettings.asset`, `EditorBuildSettings.asset` had line-ending-only changes and add nothing. Working tree clean; `main` is 6 commits ahead of `origin/main`, not pushed.
-- `main` fast-forwarded from `70a0071` to `26d3ca3` (history was linear: 002 on top of main, 003 on top of 002), so Spikes 002 and 003 are in `main`: Spike 002 harness, plan §4.4 + D14-D16, `Kit.Perf`, `perf_analyze.py`, skill `unity-perf-harness`, `justfile`, Trial 001 protocol. Done as a local ref update (`git fetch . spike/003-sweep-harness:main`) so the Editor's working files were not swapped. Nothing pushed: `main` is 4 commits ahead of `origin/main`.
-- `just check` (new): runs the 15 Python tests, exit 0; Unity is still gated by `unity-check` through UnityMCP.
-- Next: Trial 001 on a branch `trial/001-<feature>` from `main`.
+### 2026-10-13 (LFS/merge, branching, plugin, cleanup) — tasks 015-018
+- 015 (D29, D30): `.gitattributes`, `setup_git.py`, `unity_merge.py` (git hands merge drivers extension-less temp files, which UnityYAMLMerge rejects; the wrapper restores the extension), feature-branch rule. Scratch-repo proof: two branches editing neighbouring lines of one scene object conflict in plain git and merge cleanly with the driver.
+- 016 (D31): kit as a Claude Code plugin; every kit path in skills, roles and templates is `${CLAUDE_PLUGIN_ROOT}/...`; `init_project.py` + `templates/project/`. A marketplace install copies the whole repo into the plugin cache, so it is not used; load with the env var `CLAUDE_CODE_PLUGIN_DIRS` (a `settings.json` `env` entry is read too late) or `claude --plugin-dir`.
+- 017 (D32): Unity test project removed from the repo, tagged `test-project-snapshot`.
+- 018: cleanup for public use. Removed spike and trial write-ups, old task cards, grass feature docs, research note, the archived log, and the unrelated Grok document; added `README.md`; rewrote this file. One test that copied an old card now builds it inline. Not done: a LICENSE (the human chooses one).

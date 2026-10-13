@@ -2,6 +2,7 @@
 
 Owner: Alexandros · Living document: every decision we make lands here.
 Agents: read this, then `docs/HANDOFF.md`, before doing anything.
+History: the spike and trial write-ups, old task cards, the grass feature docs and the old test project were removed from the tree in task 018 and D32. They are in git history (tag `test-project-snapshot` has the test project). Decisions below that cite "Spike" or "Trial" refer to them.
 
 ## 1. Goal
 A kit (skills, rules, Python scripts, logs) that lets AI coding agents design, implement,
@@ -64,10 +65,8 @@ Not a general coding assistant. Not a set of "be a good Unity dev" prompts.
 ├── docs/
 │   ├── IMPLEMENTATION_PLAN.md   this file
 │   ├── HANDOFF.md               current state, next step (updated every session)
-│   ├── features/                one folder per feature: feature.md (brief), implementation-plan.md
-│   ├── tasks/                   task cards (NNN-name.md: goal, scope block, steps, acceptance)
-│   ├── research/                dated research notes
-│   └── decisions/               longer write-ups when a decision needs one
+│   ├── features/                (created in target projects) one folder per feature: feature.md, implementation-plan.md
+│   └── tasks/                   (created in target projects) task cards NNN-name.md: goal, scope block, steps, acceptance
 ├── skills/
 │   ├── core/                    process: plan, handoff, verify-gate, review, friction-to-structure
 │   ├── roles/                   one short file per agent role (§4.6)
@@ -231,7 +230,7 @@ review pack (repo zip for a bigger model), approval list.
 - [x] Unity version / pipeline for the test project → 6000.3.10f1, URP (D10).
 - [x] MCP bridge → CoplayDev/unity-mcp, stdio (D9). Pin to a release tag instead of `#main`.
 - [x] Git LFS + Unity YAML merge (`.gitattributes`) for binary assets and scenes? → D29.
-- [ ] Rename folders without spaces/typos (`Test Environments`) before scripts depend on the paths?
+- [x] Rename folders without spaces/typos before scripts depend on the paths? -> done, then the test folder left the repo (D32).
 - [x] Unity branching: one branch per task, or work on a single feature branch with a commit per task? → feature branch, commit per card (D30).
 - [x] While an agent runs, does the human keep using the Editor? → No, human steps away (D6).
 - [ ] Reference machine + resolution for perf budgets; render pipeline (URP/HDRP/custom SRP).

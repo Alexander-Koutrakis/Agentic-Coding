@@ -4,9 +4,9 @@ Start every session: if no skill named `agentic-kit:*` is listed, the kit plugin
 End every session: add an entry to the HANDOFF session log, update "Current state" and "Next step", commit.
 
 ## Layout
-- Kit docs: `docs/` · spikes: `docs/spikes/` · plugin `agentic-kit` (D31): skills `skills/<track>/<name>/SKILL.md`, scripts `scripts/`, templates `templates/` (project files for `init_project.py` in `templates/project/`)
+- Kit docs: `docs/` (plan, handoff) · `README.md` for users · plugin `agentic-kit` (D31): skills `skills/<track>/<name>/SKILL.md`, scripts `scripts/`, templates `templates/` (project files for `init_project.py` in `templates/project/`)
 - No Unity project lives in this repo (D32). The old test project (Unity 6000.3.10f1, URP 17.3, with the `Kit.Spike` and `Kit.Perf` canaries) is in git tag `test-project-snapshot`; to use it, check it out into a separate folder outside this repo.
-- The Unity Editor is open and reachable through the `UnityMCP` MCP server. The human is not using the Editor while you work.
+- When you work on a Unity project (a target project, not this repo), its Editor is open and reachable through the `UnityMCP` MCP server, and the human is not using the Editor while you work.
 
 ## Feature pipeline (plan §4.6)
 - Roles are skills: `agentic-kit:architect`, `director`, `plan-reviewer`, `csharp-coder`, `shader-coder`, `code-reviewer`. When you act as a role, invoke its skill first and follow it.

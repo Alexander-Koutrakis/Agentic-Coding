@@ -1,5 +1,4 @@
 import io
-import shutil
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -252,7 +251,8 @@ def test_card_failures(repo, old, new, expect):
 
 
 def test_old_format_card_fails_missing_coder(repo):
-    shutil.copy(REPO / "docs/tasks/003-code-rules-analyzers.md", repo / "docs/tasks/003-old.md")
+    old_card = CARD.replace("Coder: csharp · ", "")
+    write(repo, "docs/tasks/003-old.md", old_card)
     code, out = run(repo, "docs/tasks/003-old.md")
     assert code == 1
     assert "'Coder:'" in out
