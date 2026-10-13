@@ -17,13 +17,21 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 ## Next step
 1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
 2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); friction proposals T1-8 to T1-12 are fixed (task 013, D28); the rest (T1-1 to T1-7, T1-13 to T1-18 in `logs/friction-log.md`) are open.
-3. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
-4. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
-5. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
-6. Later: player-build numbers, visual gate (screenshot diff).
+3. `Sweep_Grass` drift check fails on `main` PlayMode (see the 2026-10-13 entry): human decides whether to change the check.
+4. Housekeeping: friction #3 of Spike 001 (what rewrote `SpikeMathTests.cs`); what set `EditorSettings.m_EnterPlayModeOptions` to 1 (committed as found).
+5. Task 003 follow-ups: fail the gate on `UNT` performance warnings in changed files only; the new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL `RoslynAnalyzer` label. KIT005 (max 3 parameters) when built.
+6. Spike 003 proposals: loaded reference point for the drift check; `perf_check.py` as a gate over `report.json` and into `unity-check`; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
+7. Later: player-build numbers, visual gate (screenshot diff).
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-13 (PlayMode on main) — not clean, 10/12
+- PlayMode on `main` (`3fce6bc`), `run_tests` mode PlayMode, 118.6 s: **10 passed, 2 failed**. Not part of the `unity-check` PASS line (that is EditMode).
+- `Kit.Grass.Tests.GrassPerfSweepTests.Sweep_Grass` failed on its drift check: `baseline N=0 gpu_ms drifted, Expected: 0.7506 +/- 0.1370, But was: 0.9134` (about 22% between the first and last N=0 run). All 45 runs finished with valid GPU timing; 1M blades gave about 1.14-1.34 ms median. Read as the known noisy drift check (plan §4.4 Open: the N=0 point drifts 27-90% here), not a grass regression; not investigated further and run once only.
+- `Kit.Perf.Tests.ToyInstancesSweepTests.Probe_FrameTimingAvailable` failed once with an unhandled Editor log (`GUI Error: Invalid GUILayout state in GameView`, from the Game view stats overlay), then passed alone on a re-run (1/1, 5.7 s). Treated as Editor noise.
+- The other 10 passed (grass readback tests, `Smoke_OnePoint`, `Sweep_ToyInstances`, spike canary tests). No test or code was changed.
+- Open for the human: whether to loosen or rework the `Sweep_Grass` drift check (a test change, needs approval). Spike 003 already proposed a loaded reference point for the drift check.
 
 ### 2026-10-12 (task 014: stale task base) — branch `task/014-task-base-stale`
 - unity-check on merged `main` (`9d99075`): `PASS 18/18 EditMode (all assemblies), format ok (0 files), assets ok (85 assets, 85 .meta, 0 changed in git), scope: no card, code-rules ok (0 files, 0 new violations, 0 suppressed), analyzer warnings 0, 0 errors, 0 warnings`. Compile and reload waited with the resource; the MCP link dropped for about a minute after the test run started and came back by itself. PlayMode and `Sweep_Grass` not run.
