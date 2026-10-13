@@ -15,6 +15,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
 
 ## Next step
+00. **Test project removed (D32, 2026-10-13, task 017):** the repo no longer contains a Unity project; it is in tag `test-project-snapshot`. Items 2-6 below that talk about grass, `Sweep_Grass`, `PC_Renderer.asset` or paths under `Test Environments/` are history, not work, until a Unity test project exists again. The human deletes the leftover folder `Test Environments/` on disk after closing Unity (it is untracked now). Next real step: create a Unity test project outside this repo, run `init_project.py` on it and the gate (`agentic-kit:unity-check`), then bring a canary fixture across if wanted.
 0. **Kit infrastructure (2026-10-13):** D29/D30 on `task/015-gitattributes-branching` (`3b54766`), plugin D31 on `task/016-plugin-spike` (built on 015, includes it). Human: (a) merge 016 (carries 015) into `main`; (b) set the user environment variable `CLAUDE_CODE_PLUGIN_DIRS` to the repo path and restart the Claude app, otherwise kit-repo sessions stop at the first line of `CLAUDE.md` (plugin not loaded); (c) run `python scripts/core/setup_git.py` once per other clone. Then: try the plugin on a real second Unity project (`init_project.py`, then the gate on it); the gates assume a branch named `main`.
 1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
 2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); friction proposals T1-8 to T1-12 are fixed (task 013, D28); the rest (T1-1 to T1-7, T1-13 to T1-18 in `logs/friction-log.md`) are open.
@@ -26,6 +27,9 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-13 (merge of 016, test project removed) — branch `task/017-remove-test-project`
+- Merged `task/016-plugin-spike` into `main` (`1deeaff`, `--no-ff`; includes 015). Tagged `test-project-snapshot` on that merge. Removed `Test Environments/` from git (`git rm --cached`, 177 files); the files stay on disk because the Editor has the project open. `.gitattributes` lost its two test-project overrides; `CLAUDE.md`, `unity-check` examples and the plan (D32) updated. `pytest scripts`: 254 passed. Uncommitted Unity edit to `PC_Renderer.asset` is left on disk only (not in the tag).
 
 ### 2026-10-13 (plugin conversion finished) — branch `task/016-plugin-spike`
 - Converted: every kit path in the skills, roles and templates is `${CLAUDE_PLUGIN_ROOT}/...` (project paths like `docs/`, `logs/` stay relative); `CLAUDE.md` says to invoke skills by name and stops if they are not listed. New: `scripts/core/init_project.py` (+6 tests), `templates/project/` (CLAUDE.md, HANDOFF.md, friction-log.md). `pytest scripts`: 254 passed.

@@ -30,12 +30,12 @@ def test_writes_files_with_filled_placeholders(target, capsys):
     assert "PASS init: wrote 4" in capsys.readouterr().out
 
 
-def test_attributes_drop_the_kit_specific_overrides(target):
+def test_attributes_come_from_the_kit(target):
     init_project.main(["--target", str(target)])
 
     text = (target / ".gitattributes").read_text(encoding="utf-8")
     assert "merge=unityyamlmerge" in text and "filter=lfs" in text
-    assert "Test[[:space:]]Environments" not in text
+    assert "Test Environments" not in text and "Test[[:space:]]Environments" not in text
 
 
 def test_never_overwrites(target, capsys):

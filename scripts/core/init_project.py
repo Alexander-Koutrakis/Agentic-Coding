@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 
 KIT = Path(__file__).resolve().parents[2]
-ATTRIBUTES_CUT = "# Binaries committed as plain blobs before LFS"  # kit-specific overrides start here
 
 
 def find_unity_project(target: Path) -> str | None:
@@ -33,8 +32,7 @@ def fill(text: str, values: dict[str, str]) -> str:
 
 
 def attributes_text(kit: Path = KIT) -> str:
-    text = (kit / ".gitattributes").read_text(encoding="utf-8")
-    return text.split(ATTRIBUTES_CUT)[0].rstrip() + "\n"
+    return (kit / ".gitattributes").read_text(encoding="utf-8")
 
 
 def plan(kit: Path, values: dict[str, str]) -> list[tuple[str, str]]:
