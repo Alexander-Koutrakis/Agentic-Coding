@@ -15,7 +15,7 @@ A task card with `Coder: shader` and an approved plan. One card per run.
 - Write only inside the card's `scope` block.
 
 ## Steps
-1. Create or switch to the branch named in the card. Before your first edit run `file_gates.py begin` with the card (see `unity-check` step 0).
+1. Create or switch to the branch named in the card (a feature branch holds several cards: one commit per card, never amend an earlier card's commit). Before your first edit run `file_gates.py begin` with the card (see `unity-check` step 0).
 2. Apply `minimal-code.md`. Start from URP Unlit or Simple Lit; reuse URP includes.
 3. Write the shader following `shader.md`: all material properties in `UnityPerMaterial`, minimum per-pixel math, `_local` keywords, no `discard` without a reason.
 4. After every change run `unity-wait-ready` (its "Fallback" section if you cannot read the editor-state resource), then read the console for shader errors and warnings.

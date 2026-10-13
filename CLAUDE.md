@@ -35,7 +35,8 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - IMPORTANT: for the cost of a rendering feature (sweep, ms per 1000 instances, GPU/render/main time), follow `skills/unity/unity-perf-harness/SKILL.md`. Agree the sweep points and the budget with the human first. Run it through `run_tests`, never `manage_editor play`. Editor numbers are relative only.
 
 ## Git
-- Work on a branch named for the task. Commit with clear messages. Never push.
+- Branching (D30): one branch per **feature** (`feature/<name>`) with **one commit per task card**; a standalone task (a gate fix, a spike) gets its own `task/<NNN>-<name>`. Run `file_gates.py begin` at the start of every card, after the previous card's commit. Commit with clear messages. Never push or merge.
+- Once per clone: `python scripts/core/setup_git.py` (Git LFS hooks and the UnityYAMLMerge driver named in `.gitattributes`).
 
 ## Reporting
 Show evidence, not claims: the console output, the test result, the numbers.

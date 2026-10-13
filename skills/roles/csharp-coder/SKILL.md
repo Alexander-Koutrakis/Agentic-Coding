@@ -15,7 +15,7 @@ A task card with `Coder: csharp` and an approved plan. One card per run.
 - Write only inside the card's `scope` block.
 
 ## Steps
-1. Create or switch to the branch named in the card. Before your first edit run `file_gates.py begin` with the card (see `unity-check` step 0); it fixes the base every gate compares against.
+1. Create or switch to the branch named in the card (a feature branch holds several cards: one commit per card, never amend an earlier card's commit). Before your first edit run `file_gates.py begin` with the card (see `unity-check` step 0); it fixes the base every gate compares against.
 2. Apply `minimal-code.md`, then write the code in the structure the style guide requires.
 3. After every change run `unity-wait-ready`, then the console check. If you cannot read the `mcpforunity://editor/state` resource, use its "Fallback" section; never replace it with a fixed delay.
 4. Write or update the tests the card asks for. Do not weaken existing tests.
