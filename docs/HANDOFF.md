@@ -15,6 +15,7 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 - Open (plan §6): packaging of the kit (plugin vs `.claude/skills`), LFS/.gitattributes.
 
 ## Next step
+0. **Kit infrastructure (2026-10-13):** D29/D30 on `task/015-gitattributes-branching` (`3b54766`), plugin D31 on `task/016-plugin-spike` (built on 015, includes it). Human: (a) merge 016 (carries 015) into `main`; (b) set the user environment variable `CLAUDE_CODE_PLUGIN_DIRS` to the repo path and restart the Claude app, otherwise kit-repo sessions stop at the first line of `CLAUDE.md` (plugin not loaded); (c) run `python scripts/core/setup_git.py` once per other clone. Then: try the plugin on a real second Unity project (`init_project.py`, then the gate on it); the gates assume a branch named `main`.
 1. ~~Check the merge~~ done 2026-10-12 (see the top log entry). `main` is already on `origin` (pushed by the human with the merge commit).
 2. **Trial 001 follow-ups** (human decides): merge `trial/001-grass` or not; buffers on a disabled feature (brief says released, code releases only on removal); away-pose perf run to show the culling gain (and a visible-count readback in the perf test); SSAO still renders after Unity reserialized `PC_Renderer.asset`; baseline accepted 2026-10-12 (`Perf/grass/baseline.json`, session 20261012T174704; no script compares against it yet); friction proposals T1-8 to T1-12 are fixed (task 013, D28); the rest (T1-1 to T1-7, T1-13 to T1-18 in `logs/friction-log.md`) are open.
 3. `Sweep_Grass` drift check fails on `main` PlayMode (see the 2026-10-13 entry): human decides whether to change the check.
@@ -25,6 +26,16 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 
 ## Session log
 Older entries (2026-10-10 to 2026-10-12, Spikes 001-003, Tasks 002-003, rename, pipeline): `docs/archive/HANDOFF-log-2026-10.md`.
+
+### 2026-10-13 (plugin conversion finished) — branch `task/016-plugin-spike`
+- Converted: every kit path in the skills, roles and templates is `${CLAUDE_PLUGIN_ROOT}/...` (project paths like `docs/`, `logs/` stay relative); `CLAUDE.md` says to invoke skills by name and stops if they are not listed. New: `scripts/core/init_project.py` (+6 tests), `templates/project/` (CLAUDE.md, HANDOFF.md, friction-log.md). `pytest scripts`: 254 passed.
+- Loading: marketplace install copies the entire repo including `Test Environments/` into the cache, so dropped. `CLAUDE_CODE_PLUGIN_DIRS` as a real env var works (tested with `claude -p` in the kit repo and in a fresh `init`ed project); as a `settings.local.json` `env` entry it does not.
+- Not done: a real second Unity project; PlayMode and `unity-check` were not run (no Unity scripts or assets changed); a `justfile` for targets was not written (the kit's runs the kit's own tests).
+
+### 2026-10-13 (LFS/merge, branching, plugin spike) — branches `task/015-gitattributes-branching`, `task/016-plugin-spike`
+- 015 (`3b54766`): `.gitattributes` (LF on Unity YAML and text, UnityYAMLMerge, new binaries to LFS; the analyzer DLL and tutorial PNG stay plain blobs), `scripts/core/setup_git.py` (once per clone; `--check`), `unity_merge.py`. First driver version failed: git's temp merge files have no extension and UnityYAMLMerge needs it; the wrapper fixes that. Scratch-repo proof: two branches editing neighbouring lines of one scene object conflict in plain git, merge cleanly with the driver. `pytest scripts`: 248 passed (12 new). Branching rule D30 in `CLAUDE.md`, task-card template, coder roles and `unity-check`. Not seen yet: the three `ProjectSettings/*.asset` line-ending changes stopping (they were clean at the start); a real feature branch with several cards.
+- 016 (spike, not for merge as is): `.claude-plugin/plugin.json` and `unity-check` converted to `${CLAUDE_PLUGIN_ROOT}`. Headless `claude -p --plugin-dir` from a second project: skills `agentic-kit:*` found, paths substituted, `file_gates.py run` executed there (FAIL assets on a deliberately bad fake `.meta`, i.e. the gate really ran). Quirks: `csharp-coder` loads but did not appear in the model's skill listing; the gates assume a branch called `main`; a plugin cannot ship `CLAUDE.md` (validate warns about the kit's own).
+- `PC_Renderer.asset` still modified (not mine, not committed). A scratch project under the OS temp folder was left behind (a removal was blocked by the safety check).
 
 ### 2026-10-13 (PlayMode on main) — not clean, 10/12
 - PlayMode on `main` (`3fce6bc`), `run_tests` mode PlayMode, 118.6 s: **10 passed, 2 failed**. Not part of the `unity-check` PASS line (that is EditMode).

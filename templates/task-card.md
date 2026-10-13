@@ -1,6 +1,6 @@
 # Task <NNN> — <title>
 
-Branch: `task/<NNN>-<name>` · Project: `<path to Unity project>/` · Plan: `docs/features/<name>/implementation-plan.md` (<task id>)
+Branch: `feature/<name>` (or `task/<NNN>-<name>` for a standalone task) · Project: `<path to Unity project>/` · Plan: `docs/features/<name>/implementation-plan.md` (<task id>)
 Coder: csharp | shader · Profile: normal | hot-path
 Pipeline: coder → `unity-check` → code reviewer → report to the human.
 Status: todo | in progress | gate PASS | reviewed

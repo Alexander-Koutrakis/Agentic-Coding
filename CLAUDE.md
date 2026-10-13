@@ -1,23 +1,23 @@
 # Agentic Coding Kit — agent rules
 
-Start every session: read `docs/HANDOFF.md`, then `docs/IMPLEMENTATION_PLAN.md`.
+Start every session: if no skill named `agentic-kit:*` is listed, the kit plugin is not loaded: stop and tell the human to set the user environment variable `CLAUDE_CODE_PLUGIN_DIRS` to this repo's path and restart (or start with `claude --plugin-dir .`). Skills hold `${CLAUDE_PLUGIN_ROOT}` paths that only resolve when invoked by name, so never read a `SKILL.md` by path to follow it. Then read `docs/HANDOFF.md`, then `docs/IMPLEMENTATION_PLAN.md`.
 End every session: add an entry to the HANDOFF session log, update "Current state" and "Next step", commit.
 
 ## Layout
-- Kit docs: `docs/` · spikes: `docs/spikes/` · skills: `skills/<track>/<name>/SKILL.md`
+- Kit docs: `docs/` · spikes: `docs/spikes/` · plugin `agentic-kit` (D31): skills `skills/<track>/<name>/SKILL.md`, scripts `scripts/`, templates `templates/` (project files for `init_project.py` in `templates/project/`)
 - Unity test project: `Test Environments/Unity Agentic Kit test/` (Unity 6000.3.10f1, URP 17.3)
 - The Unity Editor is open and reachable through the `UnityMCP` MCP server. The human is not using the Editor while you work.
 
 ## Feature pipeline (plan §4.6)
-- Roles are skills in `skills/roles/<role>/SKILL.md` (architect, director, plan-reviewer, csharp-coder, shader-coder, code-reviewer). When you act as a role, read its file first and follow it.
-- Style guides: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`). Load only the ones your role file names.
+- Roles are skills: `agentic-kit:architect`, `director`, `plan-reviewer`, `csharp-coder`, `shader-coder`, `code-reviewer`. When you act as a role, invoke its skill first and follow it.
+- Style guides: `skills/style/` (`csharp-architecture`, `csharp-performance`, `shader`, `minimal-code`). Load only the ones your role skill names.
 - Formats: `templates/` (`feature.md`, `implementation-plan.md`, `task-card.md`). Briefs live in `docs/features/<name>/`, cards in `docs/tasks/`.
 - Repeated mistakes go to `logs/friction-log.md`.
 
 ## The gate (Unity)
 - `just check` runs the shell-side checks (Python script tests). It does **not** cover Unity: that is `unity-check` below. Report both.
-- IMPORTANT: after any change to scripts or assets, follow `skills/unity/unity-wait-ready/SKILL.md`. Never trust the return value of `refresh_unity`; it returns while still compiling.
-- IMPORTANT: before saying a Unity task is done, committing or handing off, follow `skills/unity/unity-check/SKILL.md` and paste its result line plus the real evidence. No PASS line, not done.
+- IMPORTANT: after any change to scripts or assets, follow the skill `agentic-kit:unity-wait-ready`. Never trust the return value of `refresh_unity`; it returns while still compiling.
+- IMPORTANT: before saying a Unity task is done, committing or handing off, follow the skill `agentic-kit:unity-check` and paste its result line plus the real evidence. No PASS line, not done.
 - Do not edit or delete tests to make the gate pass unless the task is to change those tests.
 
 ## Unity rules
@@ -32,10 +32,11 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 ## Profiler rules
 - `get_counters`: always pass explicit counter names, never a whole category (output is huge).
 - Numbers from the Edit Mode Editor are zeros. Measure in Play Mode, discard the first samples after entering Play, and never report a single frame as a result.
-- IMPORTANT: for the cost of a rendering feature (sweep, ms per 1000 instances, GPU/render/main time), follow `skills/unity/unity-perf-harness/SKILL.md`. Agree the sweep points and the budget with the human first. Run it through `run_tests`, never `manage_editor play`. Editor numbers are relative only.
+- IMPORTANT: for the cost of a rendering feature (sweep, ms per 1000 instances, GPU/render/main time), follow the skill `agentic-kit:unity-perf-harness`. Agree the sweep points and the budget with the human first. Run it through `run_tests`, never `manage_editor play`. Editor numbers are relative only.
 
 ## Git
-- Work on a branch named for the task. Commit with clear messages. Never push.
+- Branching (D30): one branch per **feature** (`feature/<name>`) with **one commit per task card**; a standalone task (a gate fix, a spike) gets its own `task/<NNN>-<name>`. Run `file_gates.py begin` at the start of every card, after the previous card's commit. Commit with clear messages. Never push or merge.
+- Once per clone: `python scripts/core/setup_git.py` (Git LFS hooks and the UnityYAMLMerge driver named in `.gitattributes`).
 
 ## Reporting
 Show evidence, not claims: the console output, the test result, the numbers.

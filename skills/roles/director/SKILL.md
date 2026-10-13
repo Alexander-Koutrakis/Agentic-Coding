@@ -9,8 +9,8 @@ description: Turn an approved feature brief into an implementation plan and task
 A brief has `Status: approved`. Not before.
 
 ## Inputs & access
-- The approved `feature.md`, `templates/implementation-plan.md`, `templates/task-card.md`.
-- Style guides: `skills/style/csharp-architecture.md` and `minimal-code.md` always; `csharp-performance.md` if any task is hot-path; `shader.md` if any task is a shader.
+- The approved `feature.md`, `${CLAUDE_PLUGIN_ROOT}/templates/implementation-plan.md`, `${CLAUDE_PLUGIN_ROOT}/templates/task-card.md`.
+- Style guides, in `${CLAUDE_PLUGIN_ROOT}/skills/style/`: `csharp-architecture.md` and `minimal-code.md` always; `csharp-performance.md` if any task is hot-path; `shader.md` if any task is a shader.
 - Read the repo with search first (`Grep`, `Glob`), whole files only when needed.
 - Write access: `docs/features/<name>/implementation-plan.md` and `docs/tasks/`. No source files.
 
@@ -20,7 +20,7 @@ A brief has `Status: approved`. Not before.
 3. Split into tasks. Each is one independently testable unit, not smaller (every coder pays a context cost). Set `Coder: csharp | shader` and `Profile: normal | hot-path` per task.
 4. Fill the plan from the template. For hot-path or graphics work, write the perf section: budget from the brief, harness, baseline.
 5. Write one task card per task from the template, with a `scope` block listing exact paths. Never allow `ProjectSettings/` or `Packages/` unless the plan says why.
-6. Run the docs check on the plan and every card: `uv run --no-project python scripts/core/docs_check.py <plan> <cards...>`. Fix what it reports.
+6. Run the docs check on the plan and every card: `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/core/docs_check.py" <plan> <cards...>`. Fix what it reports.
 7. Ask for plan review (`plan-reviewer`, lenses by tier). Fix critical and major findings, then give the plan to the human.
 
 ## How to validate

@@ -1,0 +1,6 @@
+{
+  "name": "agentic-kit",
+  "description": "Agentic Coding Kit for game and graphics: Unity gates, perf harness, feature pipeline roles.",
+  "version": "0.1.0",
+  "skills": ["./skills/roles/", "./skills/unity/"]
+}

@@ -11,7 +11,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 ## Inputs & access
 - The Unity project path, relative to the repo root (test project: `Test Environments/Unity Agentic Kit test`).
 - The task card, `docs/tasks/<NNN-name>.md`, for the scope gate. If there is no card (for example a check on `main`), the scope gate does not run and the result line says `scope: no card`.
-- Python scripts in `scripts/unity/` (run from the repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
+- Python scripts in `${CLAUDE_PLUGIN_ROOT}/scripts/unity/` (run from the project's repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
 - Skill `unity-wait-ready` (step 1 below).
 - UnityMCP tools `read_console`, `run_tests`, `get_test_job`.
 - The test assemblies to run. Default: every assembly you added or touched; if unsure, run all of EditMode.
@@ -20,16 +20,16 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 ## Steps
 0. **File gates**, one command. Run from the repo root, with the card for the task:
    ```
-   uv run --no-project python scripts/unity/file_gates.py begin --project "<project>" --card docs/tasks/<card>.md
-   uv run --no-project python scripts/unity/file_gates.py run --project "<project>"
+   uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" begin --project "<project>" --card docs/tasks/<card>.md
+   uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" run --project "<project>"
    ```
-   - `begin` runs **once, when the task starts** (before your first edit; the lead's brief says so). It records HEAD as the task's base, the card and the branch; on any other branch (for example `main` after the merge) the record is ignored. Every gate then compares against that same base, so earlier committed work (brief, plan, other cards) is never flagged (T1-8, T1-12). Without a record for the current branch the base is `main`. The next task needs its own `begin`.
+   - `begin` runs **once, when the task starts** (before your first edit; the lead's brief says so). It records HEAD as the task's base, the card and the branch; on any other branch (for example `main` after the merge) the record is ignored. Every gate then compares against that same base, so earlier committed work (brief, plan, other cards) is never flagged (T1-8, T1-12). Without a record for the current branch the base is `main`. The next task needs its own `begin`, run after the previous card's commit: on a feature branch with several cards this moves the base to the new HEAD, so the scope gate sees only this card's changes.
    - `run` runs format, assets, scope, code-rules in that order and stops at the first one that does not pass. It prints that gate's `FAIL <gate>: ...` line and up to 10 details (full report in `.agent/logs/<gate>.txt`). Do not refresh or compile after a failure.
    - Exit 1: that `FAIL <gate>: ...` line **is** the result line; paste it and its details.
    - Exit 2 (`ERROR ...`, a bad path, missing tool, unreadable card): the result line is `FAIL <gate>: ERROR ...` with the script's text. Fix the call; do not skip the gate.
    - Exit 0: it prints `PASS file-gates: ... base <sha>` and saves it. Do not retype it: step 8 composes the final line from it.
    - No task card (for example a check on `main`): run `run` without `begin`. The line says `scope: no card`.
-   - Single gates still work on their own (`scripts/unity/format_check.py`, `asset_check.py`, `scope_check.py`, `code_rules.py`; same `--project`, optional `--base`), for example to re-check one gate while fixing it.
+   - Single gates still work on their own (`${CLAUDE_PLUGIN_ROOT}/scripts/unity/format_check.py`, `asset_check.py`, `scope_check.py`, `code_rules.py`; same `--project`, optional `--base`), for example to re-check one gate while fixing it.
    - **format:** changed `.cs` files under `Assets/` vs the project's `.editorconfig`. Fix the file; never reformat files the task did not touch.
    - **assets:** `.meta` pairs, orphans, GUIDs on disk; `.meta` staged/committed together with its asset. Never write a `.meta` by hand: fix it through the Editor (refresh) or ask.
    - **scope:** changed files vs the card's `scope` block, `ProjectSettings/`/`Packages/` need approval, tests not deleted or weakened. Do not widen the card's scope yourself; ask.
@@ -44,7 +44,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 7. **Console again.** Read errors once more. Errors that appeared during the run are FAIL.
 8. **Compose the PASS line.** Do not type it. Run:
    ```
-   uv run --no-project python scripts/unity/file_gates.py finish --project "<project>" --editor "18/18 EditMode (Kit.Spike.Tests.EditMode)" --errors 0 --warnings 0 --analyzer-warnings 0
+   uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" finish --project "<project>" --editor "18/18 EditMode (Kit.Spike.Tests.EditMode)" --errors 0 --warnings 0 --analyzer-warnings 0
    ```
    `--editor` is the real `passed/total`, mode and assemblies from the test job. `finish` prints the PASS line only if the file gates ran on exactly the files now in the tree (otherwise `FAIL stale`: edit happened after `run`, run it again), tests passed equal total and total is above 0, and errors are 0. Paste its output as the result line.
 
@@ -52,7 +52,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 - `file_gates.py finish` printed a `PASS` line (file gates current, zero console errors, job `status` is `succeeded`, `completed == total`, total above 0).
 - If `total` is 0, that is FAIL: the assembly name is wrong or the tests did not compile (`finish` rejects it).
 - Known-good reference (Spike 001): `Kit.Spike.Tests.EditMode` = 3 tests, all pass; a broken assertion shows as `Expected: 6.0d +/- 9.99e-06d But was: 5.0d`.
-- The scripts have their own tests: `uv run --no-project --with pytest pytest scripts/unity/tests -q`.
+- The scripts have their own tests: `uv run --no-project --with pytest pytest "${CLAUDE_PLUGIN_ROOT}/scripts/unity/tests" -q`.
 
 ## What to return
 One line, then evidence:

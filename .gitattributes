@@ -1,2 +1,77 @@
-# Auto detect text files and perform LF normalization
+# Line endings: normalize text to LF in the index. Unity YAML is forced to LF in the
+# working tree too, so Unity's own writes do not show up as line-ending-only changes.
 * text=auto
+
+# Unity YAML (force-text serialization): LF, and merged by UnityYAMLMerge.
+# The driver is registered per machine by `python scripts/core/setup_git.py`.
+*.unity       text eol=lf merge=unityyamlmerge
+*.prefab      text eol=lf merge=unityyamlmerge
+*.asset       text eol=lf merge=unityyamlmerge
+*.mat         text eol=lf merge=unityyamlmerge
+*.anim        text eol=lf merge=unityyamlmerge
+*.controller  text eol=lf merge=unityyamlmerge
+*.overrideController text eol=lf merge=unityyamlmerge
+*.mask        text eol=lf merge=unityyamlmerge
+*.physicMaterial text eol=lf merge=unityyamlmerge
+*.lighting    text eol=lf merge=unityyamlmerge
+*.playable    text eol=lf merge=unityyamlmerge
+*.signal      text eol=lf merge=unityyamlmerge
+*.renderTexture text eol=lf merge=unityyamlmerge
+*.flare       text eol=lf merge=unityyamlmerge
+*.mixer       text eol=lf merge=unityyamlmerge
+*.meta        text eol=lf
+
+# Unity text sources
+*.cs          text eol=lf diff=csharp
+*.asmdef      text eol=lf
+*.asmref      text eol=lf
+*.shader      text eol=lf
+*.hlsl        text eol=lf
+*.cginc       text eol=lf
+*.compute     text eol=lf
+*.uss         text eol=lf
+*.uxml        text eol=lf
+*.py          text eol=lf
+*.md          text eol=lf
+
+# Real binaries go to Git LFS (new files only; see plan D29).
+# Images and textures
+*.png   filter=lfs diff=lfs merge=lfs -text
+*.jpg   filter=lfs diff=lfs merge=lfs -text
+*.jpeg  filter=lfs diff=lfs merge=lfs -text
+*.tga   filter=lfs diff=lfs merge=lfs -text
+*.psd   filter=lfs diff=lfs merge=lfs -text
+*.exr   filter=lfs diff=lfs merge=lfs -text
+*.hdr   filter=lfs diff=lfs merge=lfs -text
+*.tif   filter=lfs diff=lfs merge=lfs -text
+*.tiff  filter=lfs diff=lfs merge=lfs -text
+*.bmp   filter=lfs diff=lfs merge=lfs -text
+*.gif   filter=lfs diff=lfs merge=lfs -text
+# Models
+*.fbx   filter=lfs diff=lfs merge=lfs -text
+*.obj   filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.glb   filter=lfs diff=lfs merge=lfs -text
+*.gltf  filter=lfs diff=lfs merge=lfs -text
+# Audio and video
+*.wav   filter=lfs diff=lfs merge=lfs -text
+*.mp3   filter=lfs diff=lfs merge=lfs -text
+*.ogg   filter=lfs diff=lfs merge=lfs -text
+*.mp4   filter=lfs diff=lfs merge=lfs -text
+*.mov   filter=lfs diff=lfs merge=lfs -text
+# Native code and archives
+*.dll   filter=lfs diff=lfs merge=lfs -text
+*.so    filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
+*.a     filter=lfs diff=lfs merge=lfs -text
+*.zip   filter=lfs diff=lfs merge=lfs -text
+*.7z    filter=lfs diff=lfs merge=lfs -text
+*.bundle filter=lfs diff=lfs merge=lfs -text
+# Fonts
+*.ttf   filter=lfs diff=lfs merge=lfs -text
+*.otf   filter=lfs diff=lfs merge=lfs -text
+
+# Binaries committed as plain blobs before LFS (migrating them would rewrite pushed history).
+# Later attributes win, so these override the LFS lines above.
+Test[[:space:]]Environments/Unity[[:space:]]Agentic[[:space:]]Kit[[:space:]]test/Assets/Kit/Analyzers/*.dll -filter -diff -merge -text
+Test[[:space:]]Environments/Unity[[:space:]]Agentic[[:space:]]Kit[[:space:]]test/Assets/TutorialInfo/Icons/*.png -filter -diff -merge -text
