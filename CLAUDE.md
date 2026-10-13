@@ -5,7 +5,7 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 
 ## Layout
 - Kit docs: `docs/` (plan, handoff) · `README.md` for users · plugin `agentic-kit` (D31): skills `skills/<track>/<name>/SKILL.md`, scripts `scripts/`, templates `templates/` (project files for `init_project.py` in `templates/project/`)
-- No Unity project lives in this repo (D32). The old test project (Unity 6000.3.10f1, URP 17.3, with the `Kit.Spike` and `Kit.Perf` canaries) is in git tag `test-project-snapshot`; to use it, check it out into a separate folder outside this repo.
+- No Unity project lives in this repo (D32). The old test project (Unity 6000.3.10f1, URP 17.3, with the `Kit.Spike` and `Kit.Perf` canaries) is in git history, last present at commit `1deeaff`; to use it, check that commit out into a separate folder outside this repo (`git worktree add ../unity-test-snapshot 1deeaff`).
 - When you work on a Unity project (a target project, not this repo), its Editor is open and reachable through the `UnityMCP` MCP server, and the human is not using the Editor while you work.
 
 ## Feature pipeline (plan §4.6)

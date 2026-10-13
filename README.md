@@ -48,4 +48,4 @@ It ships as a Claude Code plugin named `agentic-kit`, plus a script that writes 
 - `docs/IMPLEMENTATION_PLAN.md`: goals, principles, decisions log.
 - `docs/HANDOFF.md`: current state and next step; update it at the end of every session.
 - `just check` (or `uv run --no-project --with pytest pytest scripts`) runs the script tests. The Unity side is checked with `agentic-kit:unity-check` in a real project.
-- Earlier spike and trial write-ups, and the old test project, are in git history (tag `test-project-snapshot`).
+- Earlier spike and trial write-ups, and the old test project, are in git history (the test project is last present at commit `1deeaff`).
