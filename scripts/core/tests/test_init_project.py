@@ -27,7 +27,7 @@ def test_writes_files_with_filled_placeholders(target, capsys):
     assert "# Demo" in claude and "`Game/`" in claude and "{{" not in claude
     assert "{{" not in (target / "docs/HANDOFF.md").read_text(encoding="utf-8")
     assert (target / "logs/friction-log.md").is_file()
-    assert "PASS init: wrote 4" in capsys.readouterr().out
+    assert "PASS init: wrote 8" in capsys.readouterr().out
 
 
 def test_attributes_come_from_the_kit(target):
@@ -36,6 +36,33 @@ def test_attributes_come_from_the_kit(target):
     text = (target / ".gitattributes").read_text(encoding="utf-8")
     assert "merge=unityyamlmerge" in text and "filter=lfs" in text
     assert "Test Environments" not in text and "Test[[:space:]]Environments" not in text
+
+
+def test_canary_lands_in_the_unity_project(target):
+    init_project.main(["--target", str(target)])
+
+    canary = target / "Game/Assets/Kit/Canary"
+    assert (canary / "Kit.Canary.asmdef").is_file() and (canary / "CanaryMath.cs").is_file()
+    assert (canary / "Tests/EditMode/Kit.Canary.Tests.EditMode.asmdef").is_file()
+    assert (canary / "Tests/EditMode/CanaryMathTests.cs").read_text(encoding="utf-8").count("[Test]") == 3
+
+
+def test_no_canary_flag(target, capsys):
+    assert init_project.main(["--target", str(target), "--no-canary"]) == 0
+
+    assert not (target / "Game/Assets/Kit").exists()
+    assert "PASS init: wrote 4" in capsys.readouterr().out
+
+
+def test_canary_path_when_the_repo_is_the_unity_project(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "Assets").mkdir()
+    (tmp_path / "ProjectSettings").mkdir()
+    (tmp_path / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.3.10f1\n")
+
+    assert init_project.main(["--target", str(tmp_path)]) == 0
+
+    assert (tmp_path / "Assets/Kit/Canary/CanaryMath.cs").is_file()
 
 
 def test_never_overwrites(target, capsys):
@@ -60,5 +87,5 @@ def test_not_a_repo_is_exit_2(tmp_path):
 
 def test_real_templates_have_no_unknown_placeholders():
     values = {"name": "n", "unity_project": "u", "date": "d"}
-    for _, text in init_project.plan(KIT, values):
+    for _, text in init_project.plan(KIT, values, canary=True):
         assert "{{" not in text

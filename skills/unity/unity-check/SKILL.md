@@ -50,8 +50,8 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 
 ## How to validate
 - `file_gates.py finish` printed a `PASS` line (file gates current, zero console errors, job `status` is `succeeded`, `completed == total`, total above 0).
-- If `total` is 0, that is FAIL: the assembly name is wrong or the tests did not compile (`finish` rejects it).
-- Known-good reference (Spike 001): `Kit.Spike.Tests.EditMode` = 3 tests, all pass; a broken assertion shows as `Expected: 6.0d +/- 9.99e-06d But was: 5.0d`.
+- If `total` is 0, that is FAIL (`finish` rejects it): the assembly name is wrong, the tests did not compile, or the project has no test assemblies at all (`git ls-files` shows no `.asmdef` under a `Tests` folder). In the last case install the canary with the kit's `init_project.py` (it writes `Assets/Kit/Canary/`, 3 EditMode tests) or add real tests; do not report PASS.
+- Known-good reference: `Kit.Canary.Tests.EditMode` = 3 tests, all pass; a broken assertion shows as `Expected: 6.0d +/- 9.99e-06d But was: 5.0d`.
 - The scripts have their own tests: `uv run --no-project --with pytest pytest "${CLAUDE_PLUGIN_ROOT}/scripts/unity/tests" -q`.
 
 ## What to return

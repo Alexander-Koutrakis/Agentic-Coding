@@ -27,7 +27,7 @@ It ships as a Claude Code plugin named `agentic-kit`, plus a script that writes 
    ```
    python <kit>/scripts/core/setup_git.py --repo <your repo>
    ```
-5. Open the project in the Unity Editor, start Claude Code in the repo, and ask it to run `agentic-kit:unity-check` on the clean tree. That gives you a baseline PASS line.
+5. Open the project in the Unity Editor (it creates the `.meta` files for the canary that step 3 wrote to `Assets/Kit/Canary/`), commit the canary with its `.meta` files, then start Claude Code in the repo and ask it to run `agentic-kit:unity-check`. A healthy install ends in `PASS 3/3 EditMode (Kit.Canary.Tests.EditMode)`. The canary is a tiny known-good assembly with 3 tests; the gate fails on zero tests, so a project without any test assembly cannot pass. Skip it with `--no-canary` if your project already has tests.
 
 ## What is in it
 | Path | What |

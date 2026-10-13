@@ -1,8 +1,11 @@
 """Write the project-owned kit files into a target Unity repo (a plugin cannot ship them).
 
-    python init_project.py --target PATH [--name NAME] [--unity-project REL]
+    python init_project.py --target PATH [--name NAME] [--unity-project REL] [--no-canary]
 
-Writes CLAUDE.md, .gitattributes, docs/HANDOFF.md, logs/friction-log.md from the kit's templates/project/.
+Writes CLAUDE.md, .gitattributes, docs/HANDOFF.md, logs/friction-log.md from the kit's templates/project/, and
+the canary (templates/unity-canary/ -> <unity project>/Assets/Kit/Canary/: a tiny assembly with 3 EditMode tests, so
+the first `unity-check` has tests to run and a known-good PASS). --no-canary skips it. Unity creates the .meta files
+when the Editor refreshes; commit them with the canary.
 Never overwrites: a file that already exists is reported as SKIPPED and left alone.
 --unity-project defaults to the one folder under the target that holds Assets/ and ProjectSettings/.
 Exit 0 ok, 2 bad input. Next step it prints: run setup_git.py once in the target.
@@ -35,15 +38,21 @@ def attributes_text(kit: Path = KIT) -> str:
     return (kit / ".gitattributes").read_text(encoding="utf-8")
 
 
-def plan(kit: Path, values: dict[str, str]) -> list[tuple[str, str]]:
+def plan(kit: Path, values: dict[str, str], canary: bool = False) -> list[tuple[str, str]]:
     tpl = kit / "templates" / "project"
     read = lambda name: fill((tpl / name).read_text(encoding="utf-8"), values)  # noqa: E731
-    return [
+    files = [
         ("CLAUDE.md", read("CLAUDE.md")),
         (".gitattributes", attributes_text(kit)),
         ("docs/HANDOFF.md", read("HANDOFF.md")),
         ("logs/friction-log.md", read("friction-log.md")),
     ]
+    if canary:
+        src = kit / "templates" / "unity-canary"
+        root = f"{values['unity_project']}/Assets/Kit/Canary".removeprefix("./")
+        for path in sorted(p for p in src.rglob("*") if p.is_file()):
+            files.append((f"{root}/{path.relative_to(src).as_posix()}", path.read_text(encoding="utf-8")))
+    return files
 
 
 def main(argv: list[str] | None = None, kit: Path = KIT) -> int:
@@ -51,6 +60,7 @@ def main(argv: list[str] | None = None, kit: Path = KIT) -> int:
     parser.add_argument("--target", required=True)
     parser.add_argument("--name")
     parser.add_argument("--unity-project")
+    parser.add_argument("--no-canary", action="store_true", help="do not install the canary test assembly")
     args = parser.parse_args(argv)
 
     target = Path(args.target).resolve()
@@ -64,7 +74,7 @@ def main(argv: list[str] | None = None, kit: Path = KIT) -> int:
     values = {"name": args.name or target.name, "unity_project": unity, "date": datetime.date.today().isoformat()}
 
     written, skipped = [], []
-    for rel, text in plan(kit, values):
+    for rel, text in plan(kit, values, canary=not args.no_canary):
         path = target / rel
         if path.exists():
             skipped.append(rel)
@@ -73,6 +83,8 @@ def main(argv: list[str] | None = None, kit: Path = KIT) -> int:
         path.write_text(text, encoding="utf-8", newline="\n")
         written.append(rel)
     print(f"PASS init: wrote {len(written)} ({', '.join(written) or '-'}); SKIPPED existing {len(skipped)} ({', '.join(skipped) or '-'}); unity project '{unity}'")
+    if any("/Canary/" in rel or rel.startswith("Assets/Kit/Canary") for rel in written):
+        print("Canary written without .meta files: open the project in Unity (it creates them), then commit the canary with its .meta files.")
     print(f"Next, in the target: python \"{(kit / 'scripts/core/setup_git.py').as_posix()}\" --repo .")
     return 0
 

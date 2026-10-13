@@ -15,11 +15,14 @@ Read this first, then `docs/IMPLEMENTATION_PLAN.md`. Update it at the end of eve
 2. Open friction items: T1-1 to T1-7 and T1-13 to T1-18 in `logs/friction-log.md` (rows about grass or paths in the old test project are history).
 3. Gate follow-ups: KIT005 (max 3 parameters); fail on `UNT` performance warnings in changed files only; new-violations check counts per file and rule; `unity-check` does not verify the analyzer DLL's `RoslynAnalyzer` label.
 4. Perf harness follow-ups: `perf_check.py` as a gate over `report.json`; loaded reference point for the drift check; per-pass GPU time; baselines (`Perf/<feature>/baseline.json`).
-5. A canary fixture: `unity-check` and the perf harness have none until a small Unity test project exists again (outside this repo; the old one is in the tag).
+5. Perf canary: the EditMode canary now ships (`templates/unity-canary/`, installed by `init_project.py`); the perf harness still has no known-good fixture (the old `Kit.Perf` toy feature is in the tag).
 6. Open questions: reference machine for perf budgets; Ponytail ladder worth measured; kit for C++/Vulkan later (D8). See plan §6.
 7. Later: player-build numbers, visual gate (screenshot diff).
 
 ## Session log
+
+### 2026-10-13 (first install by another agent) — task 019
+- A fresh clone and install worked: file gates PASS (696 assets), compile ok, analyzers loaded, console clean; the gate FAILed with `0/0 tests` because the Unity project had no test assemblies. Intended behaviour, but it left no way to a first PASS. Fix: `templates/unity-canary/` (`Kit.Canary` + 3 EditMode tests, from the old Spike fixture) written by `init_project.py` into `Assets/Kit/Canary/` (`--no-canary` skips it); README step 5, the project HANDOFF template and `unity-check` text updated. Not verified in Unity: the canary compiling and running as `PASS 3/3` (needs a project with the Test Framework package).
 
 ### 2026-10-13 (LFS/merge, branching, plugin, cleanup) — tasks 015-018
 - 015 (D29, D30): `.gitattributes`, `setup_git.py`, `unity_merge.py` (git hands merge drivers extension-less temp files, which UnityYAMLMerge rejects; the wrapper restores the extension), feature-branch rule. Scratch-repo proof: two branches editing neighbouring lines of one scene object conflict in plain git and merge cleanly with the driver.
