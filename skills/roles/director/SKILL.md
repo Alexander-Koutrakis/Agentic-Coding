@@ -19,7 +19,8 @@ A brief has `Status: approved`. Not before.
 2. Design in words: approach in five lines, then the types (`CreateInfo`, data, system) with an owner for every resource.
 3. Split into tasks. Each is one independently testable unit, not smaller (every coder pays a context cost). Set `Coder: csharp | shader` and `Profile: normal | hot-path` per task.
 4. Fill the plan from the template. For hot-path or graphics work, write the perf section: budget from the brief, harness, baseline.
-5. Write one task card per task from the template, with a `scope` block listing exact paths. Never allow `ProjectSettings/` or `Packages/` unless the plan says why.
+5. In every card that narrows, renames or removes a member, list the known users (from your own search, with `scripts/unity/find_refs.py`) and the assets that reference it, so the coder confirms once instead of searching the tree again. Name the test assembly to run, or write `Tests: none` when the area has no tests (the coder then uses `--compile-only`).
+   Write one task card per task from the template, with a `scope` block listing exact paths. Never allow `ProjectSettings/` or `Packages/` unless the plan says why.
 6. Run the docs check on the plan and every card: `uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/core/docs_check.py" <plan> <cards...>`. Fix what it reports.
 7. Ask for plan review (`plan-reviewer`, lenses by tier). Fix critical and major findings, then give the plan to the human.
 

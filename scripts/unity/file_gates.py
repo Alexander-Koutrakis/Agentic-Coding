@@ -4,11 +4,15 @@
     file_gates.py run    --project P [--card C]  format, assets, scope, code-rules; stops at the first failure
     file_gates.py finish --project P --editor "18/18 EditMode (Asm)" --errors 0 --warnings 0
                                                  PASS line = file gates (verified current) + Editor results
+    file_gates.py finish --project P --compile-only --errors 0 --warnings 0
+                                                 same, no tests run: only for an area that has no tests (D33)
 
 Every gate compares against the same base: --base, else the rev `begin` recorded, else main (T1-8, T1-12).
 `finish` refuses if files changed since `run` (fingerprint of HEAD, base and every changed file), so the file
 part of the PASS line is never a claim. The Editor part (compile, console, tests) stays with UnityMCP (D11);
-`finish` only checks it is consistent (tests passed == total > 0, no errors).
+`finish` only checks it is consistent (tests passed == total > 0, no errors). `--compile-only` replaces the
+test result with a clean compile and console; it is refused when the task changed test code, and the PASS line
+says `compile-only (no tests run)` so the reviewer sees it.
 
 Exit codes: 0 PASS, 1 FAIL, 2 usage or environment error.
 """
@@ -26,7 +30,8 @@ import asset_check
 import code_rules
 import format_check
 import scope_check
-from changed_files import changed_files, git, repo_root
+from unity_assemblies import Assemblies
+from changed_files import changed_files, git, merge_base, repo_root
 from gate_common import GateError, exit_with, read_task_base, resolve_base, resolve_project, write_task_base
 
 GATE = "file-gates"
@@ -109,20 +114,33 @@ def cmd_finish(args, repo: Path, project: str) -> int:
     if fingerprint(repo, state["base"]) != state["fingerprint"]:
         print("FAIL stale: files changed since the file gates ran; run 'file_gates.py run' again")
         return 1
-    m = EDITOR.match(args.editor)
-    if not m:
-        raise GateError(f"--editor must start with passed/total, e.g. '18/18 EditMode (Asm)', got '{args.editor}'")
-    passed, total = int(m[1]), int(m[2])
-    if total == 0:
-        print("FAIL tests: 0 tests ran (wrong assembly name, or tests did not compile)")
-        return 1
-    if passed != total:
-        print(f"FAIL tests {passed}/{total}: {args.editor}")
-        return 1
+    if args.compile_only:
+        if args.editor:
+            raise GateError("--compile-only and --editor are exclusive")
+        asm = Assemblies(repo, project, merge_base(repo, state["base"]))
+        tests = [c.path for c in changed_files(repo, state["base"]) if c.status != "D" and asm.is_test(c.path)]
+        if tests:
+            print(f"FAIL tests: compile-only is not allowed, the task changed test code: {tests[0]}")
+            return 1
+        label = "compile-only (no tests run)"
+    else:
+        if not args.editor:
+            raise GateError("give --editor 'passed/total ...' or --compile-only")
+        m = EDITOR.match(args.editor)
+        if not m:
+            raise GateError(f"--editor must start with passed/total, e.g. '18/18 EditMode (Asm)', got '{args.editor}'")
+        passed, total = int(m[1]), int(m[2])
+        if total == 0:
+            print("FAIL tests: 0 tests ran (wrong assembly name, or tests did not compile)")
+            return 1
+        if passed != total:
+            print(f"FAIL tests {passed}/{total}: {args.editor}")
+            return 1
+        label = args.editor
     if args.errors:
         print(f"FAIL console: {args.errors} errors")
         return 1
-    print(f"PASS {args.editor}, {state['line']}, analyzer warnings {args.analyzer_warnings}, "
+    print(f"PASS {label}, {state['line']}, analyzer warnings {args.analyzer_warnings}, "
           f"{args.errors} errors, {args.warnings} warnings")
     return 0
 
@@ -139,7 +157,8 @@ def main(argv: list[str] | None = None) -> int:
         if name == "run":
             s.add_argument("--base", default=None, help="override the recorded base (default: recorded, else main)")
         if name == "finish":
-            s.add_argument("--editor", required=True, help='tests from the Editor, e.g. "18/18 EditMode (Kit.Spike.Tests.EditMode)"')
+            s.add_argument("--compile-only", action="store_true", help="no tests run: the area has none (refused if the task changed test code)")
+            s.add_argument("--editor", default=None, help='tests from the Editor, e.g. "18/18 EditMode (Kit.Spike.Tests.EditMode)"')
             s.add_argument("--errors", type=int, required=True, help="console errors after the run")
             s.add_argument("--warnings", type=int, required=True, help="console warnings after the run")
             s.add_argument("--analyzer-warnings", type=int, default=0)

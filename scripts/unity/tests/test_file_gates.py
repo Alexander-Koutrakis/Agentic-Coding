@@ -125,3 +125,35 @@ def test_a_base_recorded_on_another_branch_is_ignored(task, capsys):
     out = capsys.readouterr().out
     assert code == 0
     assert "scope: no card" in out and out.strip().endswith("base main")
+
+
+def test_finish_compile_only_passes_and_says_no_tests_ran(task, capsys):
+    gates(task, "begin", *ARGS, "--card", CARD)
+    task.asset("Kit/Task/New.txt", "new")
+    gates(task, "run", *ARGS)
+    capsys.readouterr()
+
+    code = gates(task, "finish", *ARGS, "--compile-only", "--errors", "0", "--warnings", "1")
+
+    out = capsys.readouterr().out.strip()
+    assert code == 0
+    assert out.startswith("PASS compile-only (no tests run), format ok")
+
+
+def test_finish_compile_only_still_fails_on_console_errors(task, capsys):
+    gates(task, "begin", *ARGS, "--card", CARD)
+    gates(task, "run", *ARGS)
+    capsys.readouterr()
+
+    code = gates(task, "finish", *ARGS, "--compile-only", "--errors", "2", "--warnings", "0")
+
+    assert code == 1
+    assert capsys.readouterr().out.startswith("FAIL console: 2 errors")
+
+
+def test_finish_needs_editor_or_compile_only(task):
+    gates(task, "begin", *ARGS, "--card", CARD)
+    gates(task, "run", *ARGS)
+
+    with pytest.raises(file_gates.GateError, match="--compile-only"):
+        gates(task, "finish", *ARGS, "--errors", "0", "--warnings", "0")

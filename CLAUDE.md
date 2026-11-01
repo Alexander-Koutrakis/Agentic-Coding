@@ -29,6 +29,10 @@ End every session: add an entry to the HANDOFF session log, update "Current stat
 - Never connect to the bridge port (6400) or script the bridge directly: a second client closes Claude Code's MCP link.
 - Never touch `Library/`, `Temp/`, `Logs/`, `UserSettings/`.
 
+## Search and long commands
+- IMPORTANT: never grep `Assets` or the repo root without `--include`, and never from `.` (it reaches `Library` and `Logs`). Use `scripts/unity/find_refs.py` (0 to 16 s); unscoped searches took 134 to 484 s (timing review, fx group C).
+- A command that may exceed 60 s runs with `run_in_background` and a `timeout` from the start.
+
 ## Profiler rules
 - `get_counters`: always pass explicit counter names, never a whole category (output is huge).
 - Numbers from the Edit Mode Editor are zeros. Measure in Play Mode, discard the first samples after entering Play, and never report a single frame as a result.

@@ -2,6 +2,7 @@
 
 Branch: `feature/<name>` (or `task/<NNN>-<name>` for a standalone task) · Project: `<path to Unity project>/` · Plan: `docs/features/<name>/implementation-plan.md` (<task id>)
 Coder: csharp | shader · Profile: normal | hot-path
+Tests: <test assembly to run | none: compile-only>
 Pipeline: coder → `unity-check` → code reviewer → report to the human.
 Status: todo | in progress | gate PASS | reviewed
 
@@ -19,6 +20,7 @@ tests: may-not-change
 
 ## Steps
 1. <step, concrete enough to follow without asking>
+2. Search (only when the card narrows, renames or removes a member): run `scripts/unity/find_refs.py --project <project> <Symbol...>` (add `--assets` if a serialized member or a script is touched). Known users: `<file: member, ...>`. Assets that reference it: `<none | list>`. Never grep `Assets` or the repo root without `--include`.
 
 ## Acceptance
 Each line is checked by the gate or the reviewer. Include the evidence to paste.

@@ -14,11 +14,11 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 - Python scripts in `${CLAUDE_PLUGIN_ROOT}/scripts/unity/` (run from the project's repo root with `uv`; they only read files and git, never the bridge) and the .NET SDK for `dotnet format`.
 - Skill `unity-wait-ready` (step 1 below).
 - UnityMCP tools `read_console`, `run_tests`, `get_test_job`.
-- The test assemblies to run. Default: every assembly you added or touched; if unsure, run all of EditMode.
+- The test assemblies to run: the ones the card names. If the card says `Tests: none` (the area has no tests), use `--compile-only` in step 8. Otherwise default to every assembly you added or touched; if unsure, run all of EditMode.
 - Never run batch-mode tests while the Editor has the project open.
 
 ## Steps
-0. **File gates**, one command. Run from the repo root, with the card for the task:
+0. **File gates**, one command. Run `run` right after your last edit and before any Unity refresh: on an idle machine it takes about 10 s, and 33 to 122 s while the Editor is importing (timing review). Run from the repo root, with the card for the task:
    ```
    uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" begin --project "<project>" --card docs/tasks/<card>.md
    uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" run --project "<project>"
@@ -38,7 +38,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
 2. **Console errors.** `read_console` with `action="get"`, `types=["error"]`, `count="20"`. Ignore only the bridge's own lines: their text starts with `MCP-FOR-UNITY` after rich-text tags (`<b><color=#cc3333>MCP-FOR-UNITY</color></b>: ...`). Any other error means FAIL, and the entries (file, line, column, CS or UNT code) are the evidence. A `UNT` error is an analyzer error (Microsoft.Unity.Analyzers, severities in `Assets/Default.ruleset`): fix the code, do not weaken the ruleset. If there are errors, stop here; do not run tests against stale assemblies.
    **Analyzers loaded?** Right after `unity-wait-ready`, before any console clear (a cleared console hides a load failure), also read warnings once with `filter_text="CS8032"` and once with `filter_text="analyzer"`. Any `CS8032` or "analyzer ... could not be loaded" line means `FAIL analyzers: not loaded` plus that line. A gate that silently stops analyzing must not pass.
 3. **Warnings.** `read_console` with `types=["warning"]`. Report them, but ignore the bridge's own `MCP-FOR-UNITY` lines (as in step 2). Warnings you introduced are fixed; others are listed. List the `UNT` ones on their own line, `analyzer warnings: N` (performance rules; in v1 they do not fail the gate). N goes into the PASS line.
-4. **Run tests.** `run_tests` with `mode="EditMode"`, `assembly_names=[...]`, `include_failed_tests=true`. For PlayMode use `mode="PlayMode"` and `init_timeout=120000`. If a run is rejected as already running, call `run_tests` with `clear_stuck=true` once (a lost job after a domain reload) and retry once.
+4. **Run tests.** Skip this step and steps 5 and 6 when the card says `Tests: none`: go to step 7, then use `--compile-only` in step 8. `finish` refuses `--compile-only` if the task changed test code. Otherwise `run_tests` with `mode="EditMode"`, `assembly_names=[...]`, `include_failed_tests=true`. For PlayMode use `mode="PlayMode"` and `init_timeout=120000`. If a run is rejected as already running, call `run_tests` with `clear_stuck=true` once (a lost job after a domain reload) and retry once.
 5. **Wait for results.** `get_test_job` with `wait_timeout=30`. Repeat until `status` is `succeeded` or `failed`. One call is normally enough. Stop after about 5 minutes and report a timeout as FAIL.
 6. **Collect failures.** On `failed`, read `progress.failures_so_far[]` (`full_name`, `message`). The message holds expected vs actual.
 7. **Console again.** Read errors once more. Errors that appeared during the run are FAIL.
@@ -46,6 +46,7 @@ At the end of every Unity change, before you report done, commit or hand off. A 
    ```
    uv run --no-project python "${CLAUDE_PLUGIN_ROOT}/scripts/unity/file_gates.py" finish --project "<project>" --editor "18/18 EditMode (Kit.Spike.Tests.EditMode)" --errors 0 --warnings 0 --analyzer-warnings 0
    ```
+   For a card with `Tests: none` use `--compile-only` in place of `--editor ...`; the PASS line then says `compile-only (no tests run)`.
    `--editor` is the real `passed/total`, mode and assemblies from the test job. `finish` prints the PASS line only if the file gates ran on exactly the files now in the tree (otherwise `FAIL stale`: edit happened after `run`, run it again), tests passed equal total and total is above 0, and errors are 0. Paste its output as the result line.
 
 ## How to validate
